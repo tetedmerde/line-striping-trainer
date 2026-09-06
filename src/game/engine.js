@@ -3,9 +3,12 @@ import { getMission, PASS_THRESHOLD } from './missions.js';
 import { createWorld, createGuideOverlays, LOT } from './world.js';
 import { createVehicle, updateChaseCamera } from './vehicle.js';
 import { createPaintSystem, scoreMission } from './paint.js';
+import { createCrew } from './crew.js';
+
+const ALL_COLORS = ['white', 'yellow', 'blue'];
 
 /**
- * Three.js line-striping training session.
+ * Three.js HOOKERS line-striping session on #2855 plan lot.
  */
 export class StripingGame {
   /**
@@ -22,16 +25,18 @@ export class StripingGame {
     this.clock = new THREE.Clock();
     this.keys = new Set();
     this.pointerDown = false;
-    this.guideOpacity = this.mode === 'practice' ? 1 : 1;
     this.elapsed = 0;
     this._raf = 0;
+    this.camMode = 'chase';
+    this.perspCamera = null;
+    this.orthoCamera = null;
 
     this._initThree();
     this._initScene();
     this._bindInput();
     this._resize();
     this._loop();
-    this._pushHud('Ready — drive to a guide and spray.');
+    this._pushHud('HOOKERS ready — boom on a guide, then spray.');
   }
 
   _initThree() {
@@ -55,12 +60,24 @@ export class StripingGame {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87a0b8);
-    this.scene.fog = new THREE.FogExp2(0x8fa6b8, 0.012);
+    this.scene.fog = new THREE.FogExp2(0x8fa6b8, 0.008);
 
-    this.camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 220);
-    this.camera.position.set(0, 8, 16);
+    this.perspCamera = new THREE.PerspectiveCamera(55, w / h, 0.1, 320);
+    this.perspCamera.position.set(0, 10, 18);
 
-    // Lighting — cinematic dusk-day
+    const aspect = w / Math.max(1, h);
+    const half = 22;
+    this.orthoCamera = new THREE.OrthographicCamera(
+      -half * aspect,
+      half * aspect,
+      half,
+      -half,
+      0.1,
+      320
+    );
+    this.orthoCamera.position.set(0, 42, 0.01);
+    this.camera = this.perspCamera;
+
     const hemi = new THREE.HemisphereLight(0xbcd4f0, 0x3a3028, 0.55);
     this.scene.add(hemi);
 
@@ -69,11 +86,11 @@ export class StripingGame {
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.near = 5;
-    sun.shadow.camera.far = 140;
-    sun.shadow.camera.left = -55;
-    sun.shadow.camera.right = 55;
-    sun.shadow.camera.top = 55;
-    sun.shadow.camera.bottom = -55;
+    sun.shadow.camera.far = 160;
+    sun.shadow.camera.left = -70;
+    sun.shadow.camera.right = 70;
+    sun.shadow.camera.top = 70;
+    sun.shadow.camera.bottom = -70;
     sun.shadow.bias = -0.00025;
     this.scene.add(sun);
     this.sun = sun;
@@ -82,9 +99,8 @@ export class StripingGame {
     fill.position.set(40, 20, -30);
     this.scene.add(fill);
 
-    // Soft sky dome tint
     const sky = new THREE.Mesh(
-      new THREE.SphereGeometry(180, 24, 16),
+      new THREE.SphereGeometry(220, 24, 16),
       new THREE.ShaderMaterial({
         side: THREE.BackSide,
         depthWrite: false,
@@ -129,24 +145,29 @@ export class StripingGame {
     this.scene.add(this.guides);
 
     this.paint = createPaintSystem(this.world, this.scene);
+    this.crew = createCrew(this.scene);
 
-    // Immediate camera snap
-    updateChaseCamera(this.camera, this.vehicle, 10);
+    updateChaseCamera(this.camera, this.vehicle, 10, { mode: this.camMode });
   }
 
   _bindInput() {
     this._onKeyDown = (e) => {
-      this.keys.add(e.code);
+      // Always kill Space page-scroll while playing
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
         e.preventDefault();
       }
-      if (e.code === 'Digit1') this._setColor('white');
-      if (e.code === 'Digit2') this._setColor('yellow');
-      if (e.code === 'Digit3') this._setColor('blue');
+      this.keys.add(e.code);
+
+      if (e.code === 'Digit1' || e.code === 'Numpad1') this._setColor('white');
+      if (e.code === 'Digit2' || e.code === 'Numpad2') this._setColor('yellow');
+      if (e.code === 'Digit3' || e.code === 'Numpad3') this._setColor('blue');
+      if (e.code === 'KeyC' || e.code === 'KeyE') this._cycleColor(1);
+      if (e.code === 'KeyQ') this._cycleColor(-1);
+      if (e.code === 'KeyV') this._toggleCam();
       if (e.code === 'Enter') this.submit();
       if (e.code === 'KeyR' && e.shiftKey) {
         this.world.clearPaint();
-        this._pushHud('Paint cleared.');
+        this._pushHud('Paint cleared. Fresh asphalt — Hookers approve.');
       }
     };
     this._onKeyUp = (e) => this.keys.delete(e.code);
@@ -162,7 +183,7 @@ export class StripingGame {
     };
     this._onResize = () => this._resize();
 
-    window.addEventListener('keydown', this._onKeyDown);
+    window.addEventListener('keydown', this._onKeyDown, { passive: false });
     window.addEventListener('keyup', this._onKeyUp);
     window.addEventListener('blur', this._onBlur);
     window.addEventListener('resize', this._onResize);
@@ -170,13 +191,32 @@ export class StripingGame {
     window.addEventListener('pointerup', this._onPointerUp);
   }
 
+  /** Always allow white/yellow/blue — scoring penalizes wrong color vs guides. */
   _setColor(name) {
-    if (!this.mission.allowedColors.includes(name)) {
-      this._pushHud(`This mission needs ${this.mission.allowedColors.join('/')} — ${name} disabled.`);
-      return;
-    }
+    if (!ALL_COLORS.includes(name)) return;
     this.vehicle.setColor(name);
-    this._pushHud(`Paint: ${name.toUpperCase()}`);
+    const wanted = this.mission.allowedColors.includes(name);
+    const tip = wanted
+      ? `Paint: ${name.toUpperCase()}`
+      : `Paint: ${name.toUpperCase()} (mission scores ${this.mission.allowedColors.join('/').toUpperCase()} — wrong color = penalty)`;
+    this._pushHud(tip);
+  }
+
+  _cycleColor(dir) {
+    const cur = ALL_COLORS.indexOf(this.vehicle.state.color);
+    const next = ALL_COLORS[(cur + dir + ALL_COLORS.length) % ALL_COLORS.length];
+    this._setColor(next);
+  }
+
+  _toggleCam() {
+    this.camMode = this.camMode === 'chase' ? 'ortho' : 'chase';
+    this.camera = this.camMode === 'ortho' ? this.orthoCamera : this.perspCamera;
+    this._resize();
+    this._pushHud(this.camMode === 'ortho' ? 'Top-down assist ON (V to chase)' : 'Chase cam ON (V for top-down)');
+  }
+
+  setColorFromHud(name) {
+    this._setColor(name);
   }
 
   _input() {
@@ -187,20 +227,27 @@ export class StripingGame {
     if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) steer -= 1;
     if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) steer += 1;
     const spray = this.keys.has('Space') || this.pointerDown;
-    return { forward, steer, spray };
+    const precision = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+    return { forward, steer, spray, precision };
   }
 
   _resize() {
     const w = this.container.clientWidth || window.innerWidth;
     const h = this.container.clientHeight || window.innerHeight;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    const aspect = w / Math.max(1, h);
+    this.perspCamera.aspect = aspect;
+    this.perspCamera.updateProjectionMatrix();
+    const half = 22;
+    this.orthoCamera.left = -half * aspect;
+    this.orthoCamera.right = half * aspect;
+    this.orthoCamera.top = half;
+    this.orthoCamera.bottom = -half;
+    this.orthoCamera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
   }
 
   _fadeGuides() {
     if (this.mode !== 'test') return;
-    // Fade guides over time in test mode
     const t = Math.min(1, this.elapsed / 90);
     const opacity = THREE.MathUtils.lerp(0.35, 0.06, t);
     this.guides.traverse((obj) => {
@@ -219,6 +266,8 @@ export class StripingGame {
       spraying: this.vehicle.state.spraying,
       tip: tip || this.mission.tips[0],
       elapsed: this.elapsed,
+      camMode: this.camMode,
+      precision: this.vehicle.state.precision,
     });
   }
 
@@ -234,10 +283,14 @@ export class StripingGame {
       halfD: LOT.depth / 2,
     });
     this.paint.update(this.vehicle, dt);
-    updateChaseCamera(this.camera, this.vehicle, dt);
+    this.crew?.update(dt, this.vehicle);
+
+    const aspect =
+      (this.container.clientWidth || window.innerWidth) /
+      Math.max(1, this.container.clientHeight || window.innerHeight);
+    updateChaseCamera(this.camera, this.vehicle, dt, { mode: this.camMode, aspect });
     this._fadeGuides();
 
-    // Sun gentle drift
     this.sun.position.x = -35 + Math.sin(this.elapsed * 0.05) * 4;
 
     this.renderer.render(this.scene, this.camera);

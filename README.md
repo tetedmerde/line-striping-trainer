@@ -1,8 +1,8 @@
-# Line Striping Trainer
+# HOOKERS — Line Striping Trainer
 
-**3D** browser-based training simulator for parking lot line striping. Drive a striping truck around a Supercenter-style retail lot (BFR / OCR, ADA near vestibules, SECP crosswalk, fire-lane yellow curb, EV zone, cart corrals), spray paint onto asphalt, and score against ghost guides.
+**3D** browser game for the **HOOKERS** paint crew. Drive a striping truck around Supercenter **#2855** (Shawnee KS site plan), spray paint onto asphalt, and score against ghost guides — while your crew mates wander the lot.
 
-Layout inspired by a real Supercenter restriping plan. No trademarked logos — generic STORE branding only.
+Layout mapped from the real #2855 site plan sheet. No trademarked store logos — generic STORE branding only.
 
 ## Play online
 
@@ -14,29 +14,23 @@ Layout inspired by a real Supercenter restriping plan. No trademarked logos — 
 |-------|--------|
 | **W / Up** | Accelerate |
 | **S / Down** | Brake / reverse |
-| **A D / arrows** | Steer |
+| **A D / arrows** | Steer (works at low/zero speed) |
+| **Shift** | Precision crawl |
 | **Space** or **Left mouse** | Spray paint |
-| **1 / 2 / 3** | White / Yellow / Blue |
+| **1 / 2 / 3** or **HUD swatches** | White / Yellow / Blue (always) |
+| **Q / E / C** | Cycle paint color |
+| **V** | Toggle chase / top-down assist |
 | **Enter** | Submit score |
-| **Shift+R** | Clear paint (practice) |
+| **Shift+R** | Clear paint |
 
-Chase camera follows the truck. Align the side boom over ghost guides, then spray.
+## Missions
 
-## Missions (GC restriping packages)
+1. **Angled Stall Lines (Yellow)** — front bay dividers
+2. **ADA Near Vestibules** — blue borders, hashes, pads
+3. **SECP / Stop Bars / Fire Lane** — white crosswalk + stop bar; yellow arrows & fire lane
 
-1. **Stall Lines (4 inch White)** — customer bay dividers
-2. **Accessible / Van ADA** — blue borders, aisle hashes, symbol pads near entrance
-3. **SECP Crosswalk / Stop Bars / Arrows** — white stop bar + crosswalk; yellow arrows, fire-lane curb, island hashes
-
-## Modes
-
-- **Practice** — clear translucent ghost guides
-- **Test** — guides fade as time passes
-
-## Scoring
-
-Coverage vs guides, overspray penalty, wrong-color penalty. Pass at 70%.
+Wrong color still sprays — scoring penalizes mismatch vs guides.
 
 ## Stack
 
-Vite + Three.js (vanilla JS). base set for GitHub Pages.
+Vite + Three.js. `base: '/line-striping-trainer/'` for GitHub Pages.

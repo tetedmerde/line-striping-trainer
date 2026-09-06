@@ -17,14 +17,6 @@ export function createPaintSystem(world, scene) {
   const nozzlePos = new THREE.Vector3();
   const tmp = new THREE.Vector3();
 
-  /**
-   * Paint a dab at world XZ with given color.
-   * @param {number} x
-   * @param {number} z
-   * @param {string} colorName
-   * @param {number} radiusWorld meters
-   * @param {number} strength 0-1
-   */
   function paintAt(x, z, colorName, radiusWorld = 0.18, strength = 0.85) {
     const { u, v } = worldToPaintUV(x, z);
     const ctx = world.paintCtx;
@@ -46,13 +38,11 @@ export function createPaintSystem(world, scene) {
     world.updatePaint();
   }
 
-  function spray(vehicle, dt) {
+  function spray(vehicle) {
     if (!vehicle.state.spraying) return;
     vehicle.getNozzleWorld(nozzlePos);
-    // Project to ground slightly under nozzle
     const gx = nozzlePos.x;
     const gz = nozzlePos.z;
-    // Multiple dabs along motion / jitter for thicker stripe
     const count = 3;
     for (let i = 0; i < count; i++) {
       const jx = (Math.random() - 0.5) * 0.12;
@@ -60,7 +50,6 @@ export function createPaintSystem(world, scene) {
       paintAt(gx + jx, gz + jz, vehicle.state.color, 0.16 + Math.random() * 0.06, 0.7);
     }
 
-    // Particles
     if (particles.length < 80 && Math.random() < 0.7) {
       const mat = mats[vehicle.state.color] || mats.white;
       const p = new THREE.Mesh(particleGeo, mat);
@@ -91,7 +80,7 @@ export function createPaintSystem(world, scene) {
   }
 
   function update(vehicle, dt) {
-    spray(vehicle, dt);
+    spray(vehicle);
     updateParticles(dt);
   }
 
@@ -105,6 +94,7 @@ export function createPaintSystem(world, scene) {
 
 /**
  * Score mission coverage from paint canvas vs guide geometry.
+ * Supports rotated rects (`rot` = yaw radians, position is center).
  */
 export function scoreMission(world, mission) {
   const ctx = world.paintCtx;
@@ -142,8 +132,7 @@ export function scoreMission(world, mission) {
     let bestDist = Infinity;
     for (const name of allowed) {
       const t = colorTargets[name];
-      const d =
-        Math.abs(px.r - t.r) + Math.abs(px.g - t.g) + Math.abs(px.b - t.b);
+      const d = Math.abs(px.r - t.r) + Math.abs(px.g - t.g) + Math.abs(px.b - t.b);
       if (d < bestDist) {
         bestDist = d;
         best = name;
@@ -156,21 +145,39 @@ export function scoreMission(world, mission) {
   let guideHits = 0;
   let wrongColor = 0;
 
+  function sampleWorld(wx, wz, color) {
+    const { u, v } = worldToPaintUV(wx, wz);
+    const px = samplePixel(u, v);
+    guideSamples++;
+    if (colorMatch(px, color)) {
+      guideHits++;
+    } else if (px.a > 50) {
+      const nearest = nearestAllowed(px, [color, ...mission.allowedColors]);
+      if (nearest && nearest !== color) wrongColor++;
+    }
+  }
+
   function sampleRect(r) {
     const stepsX = Math.max(4, Math.ceil(r.w * 14));
     const stepsZ = Math.max(4, Math.ceil(r.d * 14));
-    for (let iz = 0; iz <= stepsZ; iz++) {
-      for (let ix = 0; ix <= stepsX; ix++) {
-        const wx = r.x + (ix / stepsX) * r.w;
-        const wz = r.z + (iz / stepsZ) * r.d;
-        const { u, v } = worldToPaintUV(wx, wz);
-        const px = samplePixel(u, v);
-        guideSamples++;
-        if (colorMatch(px, r.color)) {
-          guideHits++;
-        } else if (px.a > 50) {
-          const nearest = nearestAllowed(px, [r.color, ...mission.allowedColors]);
-          if (nearest && nearest !== r.color) wrongColor++;
+    if (r.rot) {
+      const cos = Math.cos(r.rot);
+      const sin = Math.sin(r.rot);
+      for (let iz = 0; iz <= stepsZ; iz++) {
+        for (let ix = 0; ix <= stepsX; ix++) {
+          const lx = (ix / stepsX - 0.5) * r.w;
+          const lz = (iz / stepsZ - 0.5) * r.d;
+          const wx = r.x + lx * cos + lz * sin;
+          const wz = r.z - lx * sin + lz * cos;
+          sampleWorld(wx, wz, r.color);
+        }
+      }
+    } else {
+      for (let iz = 0; iz <= stepsZ; iz++) {
+        for (let ix = 0; ix <= stepsX; ix++) {
+          const wx = r.x + (ix / stepsX) * r.w;
+          const wz = r.z + (iz / stepsZ) * r.d;
+          sampleWorld(wx, wz, r.color);
         }
       }
     }
@@ -190,16 +197,7 @@ export function scoreMission(world, mission) {
         const cx = a.x + (b.x - a.x) * t;
         const cz = a.z + (b.z - a.z) * t;
         for (const o of [-half, 0, half]) {
-          const wx = cx + nx * o;
-          const wz = cz + nz * o;
-          const { u, v } = worldToPaintUV(wx, wz);
-          const px = samplePixel(u, v);
-          guideSamples++;
-          if (colorMatch(px, poly.color)) guideHits++;
-          else if (px.a > 50) {
-            const nearest = nearestAllowed(px, [poly.color, ...mission.allowedColors]);
-            if (nearest && nearest !== poly.color) wrongColor++;
-          }
+          sampleWorld(cx + nx * o, cz + nz * o, poly.color);
         }
       }
     }
@@ -208,7 +206,6 @@ export function scoreMission(world, mission) {
   for (const r of mission.rects) sampleRect(r);
   for (const p of mission.polys) samplePoly(p);
 
-  // Overspray: sample random lot points outside guides
   let overspraySamples = 0;
   let oversprayHits = 0;
   const pads = buildGuideMask(mission);
@@ -228,10 +225,7 @@ export function scoreMission(world, mission) {
   const oversprayPenalty = Math.min(35, oversprayRate * 100 * 0.9);
   const wrongPenalty = Math.min(25, (wrongColor / Math.max(1, guideSamples)) * 100 * 2.5);
 
-  const score = Math.max(
-    0,
-    Math.min(100, coverage * 0.95 - oversprayPenalty - wrongPenalty)
-  );
+  const score = Math.max(0, Math.min(100, coverage * 0.95 - oversprayPenalty - wrongPenalty));
 
   return {
     score: Math.round(score * 10) / 10,
@@ -244,14 +238,20 @@ export function scoreMission(world, mission) {
 }
 
 function buildGuideMask(mission) {
-  const rects = mission.rects.map((r) => ({
-    ...r,
-    pad: 0.55,
-  }));
+  const rects = mission.rects.map((r) => ({ ...r, pad: 0.55 }));
   const polys = mission.polys;
 
   function inRect(wx, wz, r) {
     const pad = r.pad || 0.4;
+    if (r.rot) {
+      const cos = Math.cos(r.rot);
+      const sin = Math.sin(r.rot);
+      const dx = wx - r.x;
+      const dz = wz - r.z;
+      const lx = dx * cos - dz * sin;
+      const lz = dx * sin + dz * cos;
+      return Math.abs(lx) <= r.w / 2 + pad && Math.abs(lz) <= r.d / 2 + pad;
+    }
     return (
       wx >= r.x - pad &&
       wx <= r.x + r.w + pad &&

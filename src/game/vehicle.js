@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { COLOR_HEX } from './missions.js';
 
 /**
- * Driveable line-striping truck with side boom / spray wand.
+ * Driveable HOOKERS crew striping truck with side boom.
+ * Easy hire-friendly handling: turn-in-place, precision crawl (Shift), strong reverse.
  */
 export function createVehicle() {
   const root = new THREE.Group();
@@ -30,26 +31,29 @@ export function createVehicle() {
     transparent: true,
     opacity: 0.55,
   });
+  const accentMat = new THREE.MeshStandardMaterial({
+    color: 0xf97316,
+    roughness: 0.4,
+    metalness: 0.2,
+    emissive: 0x9a3412,
+    emissiveIntensity: 0.25,
+  });
 
-  // Chassis / bed
   const bed = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.55, 4.2), bodyMat);
   bed.position.set(0, 0.85, 0);
   bed.castShadow = true;
   bed.receiveShadow = true;
   root.add(bed);
 
-  // Cab
   const cab = new THREE.Mesh(new THREE.BoxGeometry(2.05, 1.15, 1.5), bodyMat);
   cab.position.set(0, 1.55, -1.55);
   cab.castShadow = true;
   root.add(cab);
 
-  // Windshield
   const glass = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.7, 0.12), glassMat);
   glass.position.set(0, 1.7, -2.28);
   root.add(glass);
 
-  // Paint tank on bed
   const tank = new THREE.Mesh(
     new THREE.CylinderGeometry(0.55, 0.55, 1.6, 16),
     new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.4 })
@@ -59,7 +63,20 @@ export function createVehicle() {
   tank.castShadow = true;
   root.add(tank);
 
-  // Boom arm (right side)
+  // Door / side HOOKERS stripe
+  const sideStripe = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 1.8), accentMat);
+  sideStripe.position.set(1.12, 1.05, -0.2);
+  root.add(sideStripe);
+  const sideStripeL = sideStripe.clone();
+  sideStripeL.position.x = -1.12;
+  root.add(sideStripeL);
+
+  // Cab roof HOOKERS letter blocks (generic block letters)
+  addHookersDecal(root, 0, 2.25, -1.55, 0.22);
+  // Bed side panel letters
+  addHookersDecal(root, 1.14, 1.15, 0.6, 0.16, Math.PI / 2);
+  addHookersDecal(root, -1.14, 1.15, 0.6, 0.16, -Math.PI / 2);
+
   const boom = new THREE.Group();
   boom.name = 'boom';
   const boomArm = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 0.1), chromeMat);
@@ -69,7 +86,11 @@ export function createVehicle() {
   boomDrop.position.set(3.05, -0.3, 0);
   boom.add(boomDrop);
 
-  // Wand / nozzle tip — spray origin
+  // Boom HOOKERS wrap
+  const boomTag = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.12), accentMat);
+  boomTag.position.set(1.6, 0.08, 0);
+  boom.add(boomTag);
+
   const nozzle = new THREE.Mesh(
     new THREE.SphereGeometry(0.08, 10, 10),
     new THREE.MeshStandardMaterial({
@@ -85,7 +106,6 @@ export function createVehicle() {
   boom.position.set(0.2, 1.0, 0.8);
   root.add(boom);
 
-  // Wheels
   const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.28, 14);
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 });
   const wheelPositions = [
@@ -104,7 +124,6 @@ export function createVehicle() {
     wheels.push(w);
   }
 
-  // Light bar
   const lightBar = new THREE.Mesh(
     new THREE.BoxGeometry(1.2, 0.15, 0.25),
     new THREE.MeshStandardMaterial({
@@ -116,12 +135,10 @@ export function createVehicle() {
   lightBar.position.set(0, 2.2, -1.55);
   root.add(lightBar);
 
-  // Bumper
   const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.25, 0.3), darkMat);
   bumper.position.set(0, 0.55, -2.25);
   root.add(bumper);
 
-  // State
   const state = {
     x: 0,
     z: 0,
@@ -130,11 +147,14 @@ export function createVehicle() {
     steer: 0,
     spraying: false,
     color: 'white',
-    maxSpeed: 9.5,
-    accel: 14,
-    brake: 18,
-    coast: 6,
-    turnRate: 1.85,
+    maxSpeed: 7.5,
+    accel: 11,
+    brake: 16,
+    reverseAccel: 14,
+    coast: 8,
+    turnRate: 2.35,
+    crawlTurn: 2.8,
+    precision: false,
   };
 
   function setPose(x, z, yaw) {
@@ -159,43 +179,62 @@ export function createVehicle() {
 
   /**
    * @param {number} dt
-   * @param {{ forward: number, steer: number, spray: boolean }} input
+   * @param {{ forward: number, steer: number, spray: boolean, precision?: boolean }} input
    * @param {{ halfW: number, halfD: number }} bounds
    */
   function update(dt, input, bounds) {
-    // Steer & throttle
+    state.precision = !!input.precision;
+    const crawl = state.precision;
+    const maxSpd = crawl ? state.maxSpeed * 0.28 : state.maxSpeed;
+    const accel = crawl ? state.accel * 0.55 : state.accel;
+    const revAccel = crawl ? state.reverseAccel * 0.7 : state.reverseAccel;
+
     const throttle = input.forward;
     if (throttle > 0.05) {
-      state.speed += state.accel * throttle * dt;
+      state.speed += accel * throttle * dt;
     } else if (throttle < -0.05) {
-      state.speed -= state.brake * Math.abs(throttle) * dt;
+      // Strong reverse — treat as reverse accel when stopped/backing
+      if (state.speed > 0.15) {
+        state.speed -= state.brake * Math.abs(throttle) * dt;
+      } else {
+        state.speed -= revAccel * Math.abs(throttle) * dt;
+      }
     } else {
-      // coast / friction
       if (state.speed > 0) state.speed = Math.max(0, state.speed - state.coast * dt);
       else if (state.speed < 0) state.speed = Math.min(0, state.speed + state.coast * dt);
     }
-    state.speed = THREE.MathUtils.clamp(state.speed, -state.maxSpeed * 0.45, state.maxSpeed);
 
-    const speedFactor = THREE.MathUtils.clamp(Math.abs(state.speed) / state.maxSpeed, 0.15, 1);
-    state.yaw -= input.steer * state.turnRate * speedFactor * Math.sign(state.speed || 1) * dt;
+    // Auto-creep when holding A/D at near-zero so tank-steer works
+    let steer = input.steer;
+    if (Math.abs(steer) > 0.05 && Math.abs(state.speed) < 0.35 && Math.abs(throttle) < 0.05) {
+      state.speed = (state.speed >= 0 ? 1 : -1) * (crawl ? 0.55 : 1.15);
+    }
+
+    state.speed = THREE.MathUtils.clamp(state.speed, -maxSpd * 0.75, maxSpd);
+
+    // Meaningful steering at low/zero speed (no harsh speedFactor floor)
+    const absSpd = Math.abs(state.speed);
+    const speedFactor = crawl
+      ? THREE.MathUtils.clamp(0.85 + absSpd / maxSpd, 0.85, 1.2)
+      : THREE.MathUtils.clamp(0.55 + absSpd / maxSpd, 0.55, 1.15);
+    const turn = crawl ? state.crawlTurn : state.turnRate;
+    const dir = Math.sign(state.speed || 1);
+    state.yaw -= steer * turn * speedFactor * dir * dt;
 
     state.x += Math.sin(state.yaw) * state.speed * dt;
     state.z += Math.cos(state.yaw) * state.speed * dt;
 
-    // Soft lot bounds
-    const margin = 2;
+    const margin = 2.5;
     state.x = THREE.MathUtils.clamp(state.x, -bounds.halfW + margin, bounds.halfW - margin);
     state.z = THREE.MathUtils.clamp(state.z, -bounds.halfD + margin, bounds.halfD - margin);
 
     state.spraying = !!input.spray;
     syncTransform();
 
-    // Wheel spin visual
     const spin = state.speed * dt * 2.2;
     for (const w of wheels) w.rotation.x += spin;
   }
 
-  /** World position of spray nozzle */
   function getNozzleWorld(target = new THREE.Vector3()) {
     nozzle.getWorldPosition(target);
     return target;
@@ -215,23 +254,69 @@ export function createVehicle() {
   };
 }
 
+function addHookersDecal(parent, x, y, z, scale = 0.2, yaw = 0) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x111827,
+    roughness: 0.45,
+    metalness: 0.15,
+  });
+  const letters = 'HOOKERS';
+  const w = scale * 0.85;
+  const gap = scale * 0.22;
+  let lx = -((letters.length * w + (letters.length - 1) * gap) / 2);
+  for (const ch of letters) {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(w * (ch === 'I' ? 0.4 : 1), scale * 1.1, scale * 0.25),
+      mat
+    );
+    m.position.set(lx + w / 2, 0, 0);
+    g.add(m);
+    lx += w + gap;
+  }
+  g.position.set(x, y, z);
+  g.rotation.y = yaw;
+  parent.add(g);
+  return g;
+}
+
 /**
- * Chase camera slightly above and behind the truck.
+ * Chase camera — higher/farther for striping readability.
+ * camMode: 'chase' | 'ortho'
  */
-export function updateChaseCamera(camera, vehicle, dt, lookOffset = new THREE.Vector3()) {
+export function updateChaseCamera(camera, vehicle, dt, opts = {}) {
   const s = vehicle.state;
-  const back = 8.5;
-  const height = 5.2;
+  const mode = opts.mode || 'chase';
+
+  if (mode === 'ortho') {
+    const desired = new THREE.Vector3(s.x, 42, s.z + 0.01);
+    camera.position.lerp(desired, 1 - Math.exp(-6 * dt));
+    camera.up.set(0, 1, 0);
+    camera.lookAt(s.x, 0, s.z);
+    if (camera.isOrthographicCamera) {
+      const half = 22;
+      const aspect = opts.aspect || 1.6;
+      camera.left = -half * aspect;
+      camera.right = half * aspect;
+      camera.top = half;
+      camera.bottom = -half;
+      camera.updateProjectionMatrix();
+    }
+    return;
+  }
+
+  const back = 11.5;
+  const height = 7.2;
   const desired = new THREE.Vector3(
     s.x - Math.sin(s.yaw) * back,
     height,
     s.z - Math.cos(s.yaw) * back
   );
-  camera.position.lerp(desired, 1 - Math.exp(-4.5 * dt));
+  camera.position.lerp(desired, 1 - Math.exp(-3.8 * dt));
   const lookAt = new THREE.Vector3(
-    s.x + Math.sin(s.yaw) * 4 + lookOffset.x,
-    1.2,
-    s.z + Math.cos(s.yaw) * 4 + lookOffset.z
+    s.x + Math.sin(s.yaw) * 3.5,
+    1.0,
+    s.z + Math.cos(s.yaw) * 3.5
   );
   camera.lookAt(lookAt);
 }

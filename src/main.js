@@ -46,22 +46,24 @@ function startScreen() {
     <section class="screen panel-screen active">
       <div class="card hero-card">
         <div class="badge-row">
-          <span class="badge">3D Training Sim</span>
-          <span class="badge">Industrial Grade</span>
+          <span class="badge badge-crew">HOOKERS Crew</span>
+          <span class="badge">#2855 Lot</span>
+          <span class="badge">3D Stripe Sim</span>
         </div>
-        <h1>LINE STRIPING TRAINER</h1>
+        <h1>HOOKERS</h1>
+        <p class="tagline">Line Striping Trainer</p>
         <p class="subtitle">
-          Climb into a striping truck and restripe a Supercenter-style lot — BFR, ADA, SECP crosswalk, fire lane.
-          Chase-cam driving, persistent spray on asphalt, mission scoring —
-          built to get new hires field-ready.
+          Climb into the crew truck and restripe Supercenter <strong>#2855</strong> —
+          real site-plan layout, angled stalls, ADA, SECP crosswalks, fire lane.
+          Your Hookers crew mates are already on the asphalt. Don’t embarrass them.
         </p>
         <ul class="feature-list">
-          <li>Driveable striper · WASD + boom spray</li>
-          <li>Big-box lot · stalls, ADA, arrows & crosswalk</li>
-          <li>Practice ghosts or Test mode fade-out</li>
+          <li>Plan-accurate #2855 lot under your tires</li>
+          <li>WASD striper · boom spray · crawl mode for precision</li>
+          <li>Switch paint anytime — scoring is how you learn</li>
         </ul>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btn-start">Enter Simulator</button>
+          <button class="btn btn-primary" id="btn-start">Roll With Hookers</button>
         </div>
       </div>
     </section>
@@ -92,8 +94,11 @@ function selectScreen() {
   return `
     <section class="screen panel-screen active">
       <div class="card">
-        <h1>Select Mission</h1>
-        <p class="subtitle">Pick a scenario and mode. Practice shows clear ghost guides; Test fades them as you work.</p>
+        <div class="badge-row">
+          <span class="badge badge-crew">HOOKERS</span>
+        </div>
+        <h1>Pick Your Chaos</h1>
+        <p class="subtitle">Practice keeps the ghosts bright. Test fades them while the crew watches. Color keys always work — wrong color just costs pride (and points).</p>
 
         <div class="mode-toggle" role="group" aria-label="Training mode">
           <button type="button" class="btn btn-secondary ${state.mode === 'practice' ? 'active' : ''}" data-mode="practice">Practice</button>
@@ -142,15 +147,20 @@ function gameScreen() {
       <div class="hud">
         <div class="hud-top">
           <div class="hud-block">
-            <span class="hud-label">Mission</span>
+            <span class="hud-label">HOOKERS · Mission</span>
             <span class="hud-value" id="hud-mission">${m.title}</span>
           </div>
           <div class="hud-block">
             <span class="hud-label">Mode</span>
             <span class="hud-value" id="hud-mode">${state.mode}</span>
           </div>
-          <div class="hud-block">
-            <span class="hud-label">Paint</span>
+          <div class="hud-block hud-color-block">
+            <span class="hud-label">Paint (click / 1·2·3)</span>
+            <div class="color-swatches" id="color-swatches">
+              <button type="button" class="swatch" data-color="white" title="White (1)" style="--sw:${COLORS.white}"><span>1</span></button>
+              <button type="button" class="swatch" data-color="yellow" title="Yellow (2)" style="--sw:${COLORS.yellow}"><span>2</span></button>
+              <button type="button" class="swatch" data-color="blue" title="Blue (3)" style="--sw:${COLORS.blue}"><span>3</span></button>
+            </div>
             <span class="hud-value paint-swatch" id="hud-color">
               <i id="hud-swatch" style="background:${COLORS[m.allowedColors[0]]}"></i>
               <span id="hud-color-name">${m.allowedColors[0]}</span>
@@ -169,9 +179,11 @@ function gameScreen() {
           </div>
         </div>
         <div class="hud-help">
-          <span>WASD / Arrows drive</span>
+          <span>WASD drive</span>
           <span>Space / LMB spray</span>
-          <span>1 White · 2 Yellow · 3 Blue</span>
+          <span>Shift crawl</span>
+          <span>1·2·3 / Q·E paint</span>
+          <span>V top-down</span>
           <span>Enter submit</span>
         </div>
       </div>
@@ -190,15 +202,26 @@ function bindGame() {
       const tip = document.getElementById('hud-tip');
       const spd = document.getElementById('hud-speed');
       if (sw) sw.style.background = COLORS[data.color] || '#fff';
-      if (cn) cn.textContent = data.color;
+      if (cn) cn.textContent = data.color + (data.precision ? ' · CRAWL' : '');
       if (tip && data.tip) tip.textContent = data.tip;
       if (spd) spd.textContent = `${(data.speed * 2.2).toFixed(0)} mph`;
+      document.querySelectorAll('.swatch').forEach((el) => {
+        el.classList.toggle('active', el.dataset.color === data.color);
+      });
     },
     onComplete: (results) => {
       state.lastResults = results;
       state.screen = 'results';
       render();
     },
+  });
+
+  document.querySelectorAll('.swatch').forEach((btn) => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      state.game?.setColorFromHud(btn.dataset.color);
+    };
   });
 
   document.getElementById('btn-abort').onclick = () => {
@@ -209,7 +232,6 @@ function bindGame() {
     state.game?.submit();
   };
 
-  // Focus canvas for keys
   requestAnimationFrame(() => {
     state.game?.renderer?.domElement?.focus();
   });
@@ -227,14 +249,16 @@ function resultsScreen() {
     threshold: PASS_THRESHOLD,
   };
   const passClass = r.passed ? 'pass' : 'fail';
+  const headline = r.passed ? 'HOOKERS APPROVE' : 'NEEDS ANOTHER PASS';
   return `
     <section class="screen panel-screen active">
       <div class="card results-card">
         <div class="badge-row">
+          <span class="badge badge-crew">HOOKERS</span>
           <span class="badge">${r.missionTitle}</span>
           <span class="badge">${r.mode}</span>
         </div>
-        <h1 class="${passClass}">${r.passed ? 'PASS' : 'NEEDS WORK'}</h1>
+        <h1 class="${passClass}">${headline}</h1>
         <p class="subtitle">Score ${r.score}% · pass at ${r.threshold}%</p>
 
         <div class="score-grid">

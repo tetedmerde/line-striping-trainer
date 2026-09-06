@@ -1,8 +1,7 @@
 /**
- * Mission definitions inspired by Supercenter restriping work packages
- * (BFR/OCR lot, ADA near entrances, SECP crosswalk, arrows/stop bars).
- * World: X right, Y up, Z toward storefront (negative Z = building side).
- * NO trademarked brand marks — generic STORE branding only.
+ * Missions for Supercenter #2855 front field (Shawnee KS plan).
+ * Angled stalls, ADA near vestibules, SECP crosswalks, fire-lane, arrows.
+ * HOOKERS paint crew copy — PG-13 rowdy, no NSFW.
  */
 
 export const COLORS = {
@@ -19,95 +18,97 @@ export const COLOR_HEX = {
 
 export const PASS_THRESHOLD = 70;
 
-const SW = 2.75;
-const SD = 5.5;
+/** ~60° angled stall geometry helpers */
+const ANGLE = (60 * Math.PI) / 180;
+const SW = 2.85;
+const SD = 5.6;
 
 export const MISSIONS = [
   {
     id: 1,
-    title: 'Stall Lines (4" White)',
-    description: 'Restripe white stall dividers in the main customer bay (GC restriping package).',
-    brief: 'Paint 4" white stall lines in the front bay. Keep the boom on the ghosts — overspray kills your score.',
+    title: 'Angled Stall Lines (Yellow)',
+    description: 'HOOKERS crew specialty — lay 4" yellow on the angled bay in front of the store.',
+    brief: 'Park the boom on those ghosts and stripe the angled stalls. Yellow only scores here — but hey, switch colors if you wanna practice looking dumb.',
     tips: [
-      'WASD drive · Space / LMB spray · White (1).',
-      'Work one stall line at a time along the bay.',
-      'BFR is the drive lane between the building and the stalls — stay clear when not painting.',
+      'WASD drive · Space spray · 1/2/3 always switch paint.',
+      'Shift = crawl mode for tight boom parking. V = top-down assist.',
+      'Angled bays mean you steer like you mean it — Hookers don’t do straight lines for free.',
     ],
-    allowedColors: ['white'],
-    spawn: { x: -22, z: 6, rot: 0 },
+    allowedColors: ['yellow'],
+    spawn: { x: -24, z: 10, rot: -ANGLE },
     rects: [
-      ...makeStallDividers(-30, -6, SW, SD, 12, 'white'),
-      ...makeStallDividers(-30, 12, SW, SD, 12, 'white'),
+      ...makeAngledStallBay(-34, 2, 11, 'yellow'),
+      ...makeAngledStallBay(-34, 18, 11, 'yellow'),
     ],
     polys: [],
   },
   {
     id: 2,
-    title: 'Accessible / Van ADA',
-    description: 'Blue accessible stalls near the entrance — borders, access aisle hashes, ISA pads (van-accessible).',
-    brief: 'Paint blue ADA bay borders, access-aisle hashes, and symbol pads. Van-accessible aisle is the hashed lane.',
+    title: 'ADA Near Vestibules',
+    description: 'Blue accessible stalls up front by GR/GM — borders, hashes, symbol pads.',
+    brief: 'Blue paint near the doors. Borders first, then aisle hashes, then the big blue pads. Wrong color still paints — it just tanks your score like a rookie.',
     tips: [
-      'Blue paint only (3).',
-      'Trace borders first, then hashes, then fill symbol pads.',
-      'Do not paint white stalls nearby — wrong-color / overspray penalties apply.',
+      '1 White · 2 Yellow · 3 Blue — always live. Mission wants BLUE.',
+      'Van aisle is the hashed lane — don’t fill the whole rectangle like a clown.',
+      'Crew tip: crawl (Shift) + top-down (V) when you’re lining the boom.',
     ],
     allowedColors: ['blue'],
-    spawn: { x: -8, z: 2, rot: Math.PI / 2 },
+    spawn: { x: -6, z: 4, rot: Math.PI / 2 },
     rects: [
-      { x: -10, z: -6, w: 0.2, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -10 + SW * 3.2, z: -6, w: 0.2, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -10, z: -6, w: SW * 3.2, d: 0.2, color: 'blue', type: 'ada-border' },
-      { x: -10, z: -6 + SD - 0.2, w: SW * 3.2, d: 0.2, color: 'blue', type: 'ada-border' },
-      { x: -10 + SW * 1.1, z: -6, w: 0.2, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -10 + SW * 2.2, z: -6, w: 0.2, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -9.2, z: -3.8, w: 1.5, d: 2.4, color: 'blue', type: 'ada-symbol' },
-      { x: -5.0, z: -3.8, w: 1.5, d: 2.4, color: 'blue', type: 'ada-symbol' },
-      { x: -7.15, z: -5.4, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
-      { x: -6.55, z: -5.4, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
-      { x: -5.95, z: -5.4, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
+      { x: -12, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
+      { x: -12 + SW * 3.4, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
+      { x: -12, z: -12, w: SW * 3.4, d: 0.22, color: 'blue', type: 'ada-border' },
+      { x: -12, z: -12 + SD - 0.22, w: SW * 3.4, d: 0.22, color: 'blue', type: 'ada-border' },
+      { x: -12 + SW * 1.15, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
+      { x: -12 + SW * 2.3, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
+      { x: -11.1, z: -9.6, w: 1.5, d: 2.4, color: 'blue', type: 'ada-symbol' },
+      { x: -6.6, z: -9.6, w: 1.5, d: 2.4, color: 'blue', type: 'ada-symbol' },
+      { x: -9.0, z: -11.2, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
+      { x: -8.4, z: -11.2, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
+      { x: -7.8, z: -11.2, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
     ],
     polys: [],
   },
   {
     id: 3,
-    title: 'SECP Crosswalk · Stop Bars · Arrows',
-    description: 'Store-entrance crosswalk, 12" stop bars, open/solid arrows on the BFR — plus fire-lane yellow curb touch-up.',
-    brief: 'White for stop bar + SECP crosswalk. Yellow for open arrows and 6" fire-lane striping along the BFR curb.',
+    title: 'SECP · Stop Bars · Fire Lane',
+    description: 'Store-entrance crosswalk, 12" stop bars, arrows on the BFR, yellow fire-lane curb.',
+    brief: 'White for stop bar + SECP bars. Yellow for arrows and that fire-lane curb the inspector actually looks at. Hookers pride = matching the guide color.',
     tips: [
-      'White (1): stop bar + crosswalk bars.',
-      'Yellow (2): lane arrows + fire-lane curb stripe.',
-      'Match guide color exactly — wrong color is a hard penalty.',
+      'Colors always switch (1/2/3 or click swatches). Scoring cares what’s on the asphalt.',
+      'Fire lane hugs the building frontage — long yellow pass, don’t get cute.',
+      'C / Q / E also cycle paint. V for ortho when the boom won’t sit still.',
     ],
     allowedColors: ['white', 'yellow'],
-    spawn: { x: 2, z: 20, rot: Math.PI },
+    spawn: { x: 4, z: 22, rot: Math.PI },
     rects: [
-      { x: -7, z: 3.2, w: 14, d: 0.35, color: 'white', type: 'stop-bar' },
-      ...makeCrosswalk(-6.5, -24.5, 0.65, 2.6, 1.35, 8, 'white'),
-      { x: -40, z: -28.15, w: 80, d: 0.18, color: 'yellow', type: 'fire-lane' },
-      { x: 18, z: 8, w: 2.4, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 18, z: 8.6, w: 2.4, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 18, z: 9.2, w: 2.4, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 18, z: 9.8, w: 2.4, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 18, z: 10.4, w: 2.4, d: 0.12, color: 'yellow', type: 'island' },
+      { x: -8, z: 2.5, w: 16, d: 0.38, color: 'white', type: 'stop-bar' },
+      ...makeCrosswalk(-7, -26, 0.7, 2.8, 1.4, 8, 'white'),
+      { x: -50, z: -29.2, w: 100, d: 0.2, color: 'yellow', type: 'fire-lane' },
+      { x: 30, z: 6, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
+      { x: 30, z: 6.65, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
+      { x: 30, z: 7.3, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
+      { x: 30, z: 7.95, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
+      { x: 30, z: 8.6, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
     ],
     polys: [
       {
         color: 'yellow',
-        width: 0.4,
+        width: 0.42,
         type: 'arrow',
         points: [
-          { x: -3.5, z: 12 },
-          { x: -3.5, z: 7.2 },
+          { x: -4, z: 14 },
+          { x: -4, z: 8.5 },
         ],
       },
       {
         color: 'yellow',
-        width: 0.4,
+        width: 0.42,
         type: 'arrow-head',
         points: [
-          { x: -4.6, z: 8.6 },
-          { x: -3.5, z: 7.2 },
-          { x: -2.4, z: 8.6 },
+          { x: -5.2, z: 10 },
+          { x: -4, z: 8.5 },
+          { x: -2.8, z: 10 },
         ],
       },
       {
@@ -115,8 +116,8 @@ export const MISSIONS = [
         width: 0.5,
         type: 'arrow',
         points: [
-          { x: 3.5, z: 12 },
-          { x: 3.5, z: 7.2 },
+          { x: 4, z: 14 },
+          { x: 4, z: 8.5 },
         ],
       },
       {
@@ -124,43 +125,32 @@ export const MISSIONS = [
         width: 0.5,
         type: 'arrow-head',
         points: [
-          { x: 2.3, z: 8.7 },
-          { x: 3.5, z: 7.2 },
-          { x: 4.7, z: 8.7 },
+          { x: 2.7, z: 10.1 },
+          { x: 4, z: 8.5 },
+          { x: 5.3, z: 10.1 },
         ],
       },
     ],
   },
 ];
 
-function makeStallDividers(startX, startZ, spacing, depth, count, color) {
+function makeAngledStallBay(startX, startZ, count, color) {
   const rects = [];
+  const rot = -ANGLE;
   for (let i = 0; i <= count; i++) {
+    // Center-based rotated dividers
+    const cx = startX + i * SW * Math.cos(ANGLE * 0.15);
+    const cz = startZ + i * (SW * 0.55);
     rects.push({
-      x: startX + i * spacing,
-      z: startZ,
-      w: 0.12,
-      d: depth,
+      x: cx,
+      z: cz,
+      w: 0.14,
+      d: SD,
       color,
       type: 'stall',
+      rot,
     });
   }
-  rects.push({
-    x: startX,
-    z: startZ,
-    w: count * spacing + 0.12,
-    d: 0.12,
-    color,
-    type: 'stall-edge',
-  });
-  rects.push({
-    x: startX,
-    z: startZ + depth - 0.12,
-    w: count * spacing + 0.12,
-    d: 0.12,
-    color,
-    type: 'stall-edge',
-  });
   return rects;
 }
 

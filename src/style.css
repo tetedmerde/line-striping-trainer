@@ -50,14 +50,13 @@ select {
   display: flex;
 }
 
-/* —— Panels —— */
 .panel-screen {
   align-items: center;
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245, 158, 11, 0.12), transparent 55%),
-    radial-gradient(ellipse at bottom right, rgba(37, 99, 235, 0.08), transparent 40%),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245, 158, 11, 0.16), transparent 55%),
+    radial-gradient(ellipse at bottom right, rgba(234, 88, 12, 0.1), transparent 40%),
     linear-gradient(160deg, #0a0e14 0%, #101820 50%, #0c1218 100%);
 }
 
@@ -71,10 +70,21 @@ select {
 }
 
 .hero-card h1 {
-  background: linear-gradient(90deg, #f8fafc, #f59e0b);
+  background: linear-gradient(90deg, #f8fafc, #f59e0b 55%, #ea580c);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  font-size: 2.6rem;
+  letter-spacing: 0.08em;
+}
+
+.tagline {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-hover);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin: -4px 0 12px;
 }
 
 .card h1 {
@@ -90,6 +100,10 @@ select {
   font-size: 1.05rem;
   line-height: 1.55;
   margin-bottom: 22px;
+}
+
+.card .subtitle strong {
+  color: var(--accent-hover);
 }
 
 .badge-row {
@@ -110,6 +124,13 @@ select {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.badge-crew {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(234, 88, 12, 0.25));
+  border-color: rgba(249, 115, 22, 0.65);
+  color: #fff7ed;
+  font-weight: 800;
 }
 
 .feature-list {
@@ -239,7 +260,6 @@ select {
   font-size: 0.9rem;
 }
 
-/* —— Game —— */
 .game-screen {
   position: relative;
   flex-direction: column;
@@ -289,6 +309,11 @@ select {
   backdrop-filter: blur(6px);
 }
 
+.hud-color-block {
+  pointer-events: auto;
+  min-width: 180px;
+}
+
 .hud-label {
   display: block;
   font-size: 0.68rem;
@@ -308,6 +333,7 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  margin-top: 4px;
 }
 
 .paint-swatch i {
@@ -316,6 +342,44 @@ select {
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   display: inline-block;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 4px;
+  pointer-events: auto;
+}
+
+.swatch {
+  width: 34px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: var(--sw);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.swatch span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.swatch[data-color="blue"] span {
+  color: #f8fafc;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+.swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--accent), inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  transform: scale(1.06);
 }
 
 .hud-bottom {
@@ -351,12 +415,12 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .hud-help span {
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   padding: 4px 8px;
   font-size: 0.72rem;
@@ -364,7 +428,6 @@ select {
   letter-spacing: 0.02em;
 }
 
-/* —— Results —— */
 .results-card h1.pass {
   color: var(--success);
 }
@@ -398,7 +461,8 @@ select {
     padding: 24px 18px;
   }
 
-  .card h1 {
+  .card h1,
+  .hero-card h1 {
     font-size: 1.45rem;
   }
 
