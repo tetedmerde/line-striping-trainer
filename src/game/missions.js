@@ -1,8 +1,7 @@
-/**
- * Missions for Supercenter #2855 front field (Shawnee KS plan).
- * Angled stalls, ADA near vestibules, SECP crosswalks, fire-lane, arrows.
- * HOOKERS paint crew copy — PG-13 rowdy, no NSFW.
- */
+/** Mission guides in plan-image pixel space (walmart-plan-2855.jpg = 2048×1822). */
+
+export const PLAN_W = 2048;
+export const PLAN_H = 1822;
 
 export const COLORS = {
   white: '#f2f4f7',
@@ -10,165 +9,128 @@ export const COLORS = {
   blue: '#2b6cb0',
 };
 
-export const COLOR_HEX = {
-  white: 0xf2f4f7,
-  yellow: 0xf5c518,
-  blue: 0x2b6cb0,
-};
-
 export const PASS_THRESHOLD = 70;
 
-/** ~60° angled stall geometry helpers */
-const ANGLE = (60 * Math.PI) / 180;
-const SW = 2.85;
-const SD = 5.6;
+/** @typedef {{ x:number, y:number }} Pt */
+/** @typedef {{ id:string, color:keyof typeof COLORS, width:number, a:Pt, b:Pt, label?:string }} Guide */
+
+/**
+ * Build a straight guide from A→B.
+ * @returns {Guide}
+ */
+function g(id, color, ax, ay, bx, by, width = 4, label = '') {
+  return {
+    id,
+    color,
+    width,
+    a: { x: ax, y: ay },
+    b: { x: bx, y: by },
+    label,
+  };
+}
+
+/** Parallel stall dividers along a bay (multi-bay laser-lock run). */
+function stallBay(prefix, color, x0, y0, x1, y1, count, width = 4) {
+  /** @type {Guide[]} */
+  const out = [];
+  for (let i = 0; i <= count; i++) {
+    const t = i / count;
+    const ax = x0 + (x1 - x0) * t;
+    const ay = y0 + (y1 - y0) * t;
+    // Stall depth ~ perpendicular to bay axis (angled ~ -55°)
+    const ang = -0.95; // radians
+    const depth = 95;
+    const dx = Math.cos(ang) * depth;
+    const dy = Math.sin(ang) * depth;
+    out.push(
+      g(`${prefix}-${i}`, color, ax - dx * 0.15, ay - dy * 0.15, ax + dx, ay + dy, width)
+    );
+  }
+  return out;
+}
 
 export const MISSIONS = [
   {
     id: 1,
-    title: 'Angled Stall Lines (Yellow)',
-    description: 'HOOKERS crew specialty — laser-lock 4" yellow across angled bays in front of the store.',
-    brief: 'Aim laser at the far-bay target box → L to LOCK → Space for a clean yellow 4" coat across the angled stalls.',
-    tips: [
-      'Workflow: T place/cycle target → line up green laser → L lock → drive + Space spray.',
-      'Locked path holds heading for multi-bay straight lines. Freehand is advanced/hard mode.',
-      'G toggles laser · V top-down · Shift crawl · 1/2/3 paint. Yellow scores here.',
-    ],
+    title: '1 · Angled Stall Lines',
+    brief:
+      'HOOKERS specialty — yellow 4″ stall dividers across the front field. T target → laser on box → L lock → Space spray.',
     allowedColors: ['yellow'],
-    spawn: { x: -24, z: 10, rot: -ANGLE },
-    rects: [
-      ...makeAngledStallBay(-34, 2, 11, 'yellow'),
-      ...makeAngledStallBay(-34, 18, 11, 'yellow'),
+    spawn: { x: 620, y: 1180, rot: -0.95 },
+    view: { x: 720, y: 1120, zoom: 1.55 },
+    guides: [
+      ...stallBay('stall-a', 'yellow', 560, 1080, 900, 1280, 8),
+      ...stallBay('stall-b', 'yellow', 500, 1180, 840, 1380, 8),
     ],
-    polys: [],
   },
   {
     id: 2,
-    title: 'ADA Near Vestibules',
-    description: 'Blue accessible stalls up front by GR/GM — borders, hashes, symbol pads.',
-    brief: 'Blue near the doors. Lock laser on the target for borders, then hashes and pads. Wrong color still paints — it tanks your score.',
-    tips: [
-      '1 White · 2 Yellow · 3 Blue — always live. Mission wants BLUE.',
-      'Laser lock for straight borders; unlock (L) for short hash work if you need freehand.',
-      'T cycles target box across guides. V top-down helps line up the tip.',
-    ],
+    title: '2 · ADA Near Vestibules',
+    brief:
+      'Blue accessible borders & hashes by the doors. Mission wants BLUE (3). Lock long borders; unlock for short hashes.',
     allowedColors: ['blue'],
-    spawn: { x: -6, z: 4, rot: Math.PI / 2 },
-    rects: [
-      { x: -12, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -12 + SW * 3.4, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -12, z: -12, w: SW * 3.4, d: 0.22, color: 'blue', type: 'ada-border' },
-      { x: -12, z: -12 + SD - 0.22, w: SW * 3.4, d: 0.22, color: 'blue', type: 'ada-border' },
-      { x: -12 + SW * 1.15, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -12 + SW * 2.3, z: -12, w: 0.22, d: SD, color: 'blue', type: 'ada-border' },
-      { x: -11.1, z: -9.6, w: 1.5, d: 2.4, color: 'blue', type: 'ada-symbol' },
-      { x: -6.6, z: -9.6, w: 1.5, d: 2.4, color: 'blue', type: 'ada-symbol' },
-      { x: -9.0, z: -11.2, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
-      { x: -8.4, z: -11.2, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
-      { x: -7.8, z: -11.2, w: 0.28, d: 4.2, color: 'blue', type: 'aisle' },
+    spawn: { x: 880, y: 780, rot: Math.PI / 2 },
+    view: { x: 940, y: 760, zoom: 1.85 },
+    guides: [
+      g('ada-l', 'blue', 900, 700, 900, 820, 5, 'border'),
+      g('ada-r', 'blue', 1020, 700, 1020, 820, 5, 'border'),
+      g('ada-t', 'blue', 900, 700, 1020, 700, 5, 'border'),
+      g('ada-b', 'blue', 900, 820, 1020, 820, 5, 'border'),
+      g('ada-m1', 'blue', 940, 700, 940, 820, 4, 'divider'),
+      g('ada-m2', 'blue', 980, 700, 980, 820, 4, 'divider'),
+      g('ada-h1', 'blue', 955, 730, 965, 810, 4, 'hash'),
+      g('ada-h2', 'blue', 970, 730, 980, 810, 4, 'hash'),
+      g('ada-h3', 'blue', 945, 730, 955, 810, 4, 'hash'),
     ],
-    polys: [],
   },
   {
     id: 3,
-    title: 'SECP · Stop Bars · Fire Lane',
-    description: 'Store-entrance crosswalk, 12" stop bars, arrows on the BFR, yellow fire-lane curb.',
-    brief: 'White stop bar + SECP. Yellow arrows & fire-lane. Lock the laser for long runs — that’s how real stripers keep a good coat.',
-    tips: [
-      'Long fire-lane: target at far end → laser on box → L lock → cruise + spray.',
-      'Colors 1/2/3 always live. Scoring cares what’s on the asphalt.',
-      'Hard steer breaks lock. G laser · T target · L lock · Space spray.',
-    ],
+    title: '3 · Stop · SECP · Fire Lane',
+    brief:
+      'White stop bar & crosswalk ticks; yellow fire-lane & arrows. Lock the long runs for a clean coat.',
     allowedColors: ['white', 'yellow'],
-    spawn: { x: 4, z: 22, rot: Math.PI },
-    rects: [
-      { x: -8, z: 2.5, w: 16, d: 0.38, color: 'white', type: 'stop-bar' },
-      ...makeCrosswalk(-7, -26, 0.7, 2.8, 1.4, 8, 'white'),
-      { x: -50, z: -29.2, w: 100, d: 0.2, color: 'yellow', type: 'fire-lane' },
-      { x: 30, z: 6, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 30, z: 6.65, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 30, z: 7.3, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 30, z: 7.95, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
-      { x: 30, z: 8.6, w: 2.5, d: 0.12, color: 'yellow', type: 'island' },
-    ],
-    polys: [
-      {
-        color: 'yellow',
-        width: 0.42,
-        type: 'arrow',
-        points: [
-          { x: -4, z: 14 },
-          { x: -4, z: 8.5 },
-        ],
-      },
-      {
-        color: 'yellow',
-        width: 0.42,
-        type: 'arrow-head',
-        points: [
-          { x: -5.2, z: 10 },
-          { x: -4, z: 8.5 },
-          { x: -2.8, z: 10 },
-        ],
-      },
-      {
-        color: 'yellow',
-        width: 0.5,
-        type: 'arrow',
-        points: [
-          { x: 4, z: 14 },
-          { x: 4, z: 8.5 },
-        ],
-      },
-      {
-        color: 'yellow',
-        width: 0.5,
-        type: 'arrow-head',
-        points: [
-          { x: 2.7, z: 10.1 },
-          { x: 4, z: 8.5 },
-          { x: 5.3, z: 10.1 },
-        ],
-      },
+    spawn: { x: 980, y: 980, rot: Math.PI },
+    view: { x: 1000, y: 900, zoom: 1.45 },
+    guides: [
+      g('stop', 'white', 820, 880, 1180, 880, 10, 'stop-bar'),
+      g('cw1', 'white', 860, 820, 860, 860, 8, 'crosswalk'),
+      g('cw2', 'white', 900, 820, 900, 860, 8, 'crosswalk'),
+      g('cw3', 'white', 940, 820, 940, 860, 8, 'crosswalk'),
+      g('cw4', 'white', 980, 820, 980, 860, 8, 'crosswalk'),
+      g('cw5', 'white', 1020, 820, 1020, 860, 8, 'crosswalk'),
+      g('cw6', 'white', 1060, 820, 1060, 860, 8, 'crosswalk'),
+      g('fire', 'yellow', 700, 650, 1300, 650, 5, 'fire-lane'),
+      g('arr1', 'yellow', 920, 980, 920, 920, 6, 'arrow'),
+      g('arr2', 'yellow', 1080, 980, 1080, 920, 6, 'arrow'),
     ],
   },
 ];
 
-function makeAngledStallBay(startX, startZ, count, color) {
-  const rects = [];
-  const rot = -ANGLE;
-  for (let i = 0; i <= count; i++) {
-    // Center-based rotated dividers
-    const cx = startX + i * SW * Math.cos(ANGLE * 0.15);
-    const cz = startZ + i * (SW * 0.55);
-    rects.push({
-      x: cx,
-      z: cz,
-      w: 0.14,
-      d: SD,
-      color,
-      type: 'stall',
-      rot,
-    });
-  }
-  return rects;
-}
-
-function makeCrosswalk(startX, startZ, barW, barD, gap, count, color) {
-  const rects = [];
-  for (let i = 0; i < count; i++) {
-    rects.push({
-      x: startX + i * (barW + gap),
-      z: startZ,
-      w: barW,
-      d: barD,
-      color,
-      type: 'crosswalk',
-    });
-  }
-  return rects;
-}
-
 export function getMission(id) {
   return MISSIONS.find((m) => m.id === id) ?? MISSIONS[0];
+}
+
+export function guideLength(guide) {
+  const dx = guide.b.x - guide.a.x;
+  const dy = guide.b.y - guide.a.y;
+  return Math.hypot(dx, dy);
+}
+
+export function guideDir(guide) {
+  const len = guideLength(guide) || 1;
+  return {
+    x: (guide.b.x - guide.a.x) / len,
+    y: (guide.b.y - guide.a.y) / len,
+  };
+}
+
+/** Project point onto infinite guide line; return {t, dist, point}. */
+export function projectOnGuide(guide, p) {
+  const dx = guide.b.x - guide.a.x;
+  const dy = guide.b.y - guide.a.y;
+  const len2 = dx * dx + dy * dy || 1;
+  const t = ((p.x - guide.a.x) * dx + (p.y - guide.a.y) * dy) / len2;
+  const point = { x: guide.a.x + dx * t, y: guide.a.y + dy * t };
+  const dist = Math.hypot(p.x - point.x, p.y - point.y);
+  return { t, dist, point };
 }

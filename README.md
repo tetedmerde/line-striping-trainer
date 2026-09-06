@@ -1,8 +1,8 @@
 # HOOKERS — Line Striping Trainer
 
-**3D** browser game for the **HOOKERS** paint crew. Drive a **LineLazer-style** ride-on airless striper around Supercenter **#2855** (Shawnee KS site plan), lock a LazerGuide-style target for straight multi-bay lines, and lay a smooth 4" coat — while your crew mates wander the lot.
+**Top-down** browser LineLazer-style trainer for the **HOOKERS** paint crew. The real Supercenter **#2855** (Shawnee KS) site plan is the lot. Place a reflective target, lock the green laser, and lay a smooth 4″ airless coat along stall guides.
 
-Layout mapped from the real #2855 site plan sheet. No trademarked store or equipment logos — generic STORE / “airless striper” labeling only. Crew branding **HOOKERS** stays.
+No trademarked store or equipment logos — crew branding **HOOKERS** stays.
 
 ## Play online
 
@@ -10,40 +10,36 @@ Layout mapped from the real #2855 site plan sheet. No trademarked store or equip
 
 Hard-refresh (Ctrl/Cmd+Shift+R) after deploys so the new build loads.
 
-## Recommended workflow (laser lock)
+## Core loop
 
-1. **T** — cycle / place the reflective **target box** at the far end of a guide (across multiple stall bays).
-2. Line up so the **green laser** from the tip sits on the target (HUD → **ON TARGET**).
-3. **L** (or **F**) — **LOCK** the stripe path (assist steering / hold heading).
-4. **Space** / LMB — spray a continuous airless tip band while driving forward/back along the lock.
-5. **L** again or hard steer — unlock. Freehand spray remains as advanced/hard mode.
+1. Pick a mission (stalls / ADA / arrows-stop-firelane)
+2. **T** — cycle/place the reflective **target box** at the end of a guide
+3. Drive (**WASD**) so the green laser hits the target
+4. **L** / **F** — **LOCK** path
+5. Hold **Space** while moving — smooth continuous stripe
+6. **Enter** — score coverage vs guides
 
 ## Controls
 
 | Input | Action |
 |-------|--------|
-| **W / Up** | Accelerate |
-| **S / Down** | Brake / reverse |
-| **A D / arrows** | Steer (works at low/zero speed; hard steer breaks lock) |
-| **Shift** | Precision crawl |
-| **Space** or **Left mouse** | Spray paint (best results when locked) |
-| **G** | Toggle laser on/off |
-| **T** | Cycle target box to next guide / bay end |
-| **L** or **F** | Lock path when laser on-target / unlock |
-| **1 / 2 / 3** or **HUD swatches** | White / Yellow / Blue (always) |
-| **Q / E / C** | Cycle paint color |
-| **V** | Toggle chase / top-down assist |
+| **WASD** / arrows | Move / steer |
+| **G** | Toggle laser |
+| **T** | Cycle target to next guide end |
+| **L** or **F** | Lock when on-target / unlock |
+| **Space** or LMB | Spray (smooth airless coat) |
+| **1 / 2 / 3** | White / Yellow / Blue |
 | **Enter** | Submit score |
-| **Shift+R** | Clear paint |
+| **R** | Clear paint |
+| **Scroll** | Zoom |
+| **Shift+drag** / RMB drag | Pan |
 
 ## Missions
 
-1. **Angled Stall Lines (Yellow)** — front bay dividers (laser lock across bays)
-2. **ADA Near Vestibules** — blue borders, hashes, pads
-3. **SECP / Stop Bars / Fire Lane** — white crosswalk + stop bar; yellow arrows & fire lane
-
-Wrong color still sprays — scoring penalizes mismatch vs guides.
+1. **Angled Stall Lines (Yellow)** — multi-bay laser-lock runs on the front field
+2. **ADA Near Vestibules** — blue borders & hashes
+3. **Stop / SECP / Fire Lane** — white stop bar & crosswalk ticks; yellow fire-lane & arrows
 
 ## Stack
 
-Vite + Three.js. `base: '/line-striping-trainer/'` for GitHub Pages.
+Vite + vanilla Canvas 2D. `base: '/line-striping-trainer/'` for GitHub Pages. Plan asset: `public/walmart-plan-2855.jpg`.
