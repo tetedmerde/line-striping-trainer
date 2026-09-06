@@ -1,4 +1,4 @@
-import { MISSIONS, PASS_THRESHOLD } from './game/missions.js';
+import { MISSIONS, PASS_THRESHOLD, COLORS } from './game/missions.js';
 import { StripingGame } from './game/engine.js';
 
 const app = document.getElementById('app');
@@ -6,9 +6,10 @@ const app = document.getElementById('app');
 const state = {
   screen: 'start',
   missionId: 1,
-  mode: 'practice', // practice | test
+  mode: 'practice',
   game: null,
   lastResults: null,
+  hudTip: '',
 };
 
 function render() {
@@ -43,19 +44,24 @@ function render() {
 function startScreen() {
   return `
     <section class="screen panel-screen active">
-      <div class="card">
+      <div class="card hero-card">
         <div class="badge-row">
-          <span class="badge">Training Simulator</span>
-          <span class="badge">Parking Lot Striping</span>
+          <span class="badge">3D Training Sim</span>
+          <span class="badge">Industrial Grade</span>
         </div>
-        <h1>Line Striping Trainer</h1>
+        <h1>LINE STRIPING TRAINER</h1>
         <p class="subtitle">
-          Practice painting stall lines, ADA markings, arrows, stop bars, and
-          crosswalks on a retail-style lot layout. Follow the guides, choose the
-          correct paint color, and meet the accuracy standard before you hit the field.
+          Climb into a striping truck and restripe a Supercenter-style lot — BFR, ADA, SECP crosswalk, fire lane.
+          Chase-cam driving, persistent spray on asphalt, mission scoring —
+          built to get new hires field-ready.
         </p>
+        <ul class="feature-list">
+          <li>Driveable striper · WASD + boom spray</li>
+          <li>Big-box lot · stalls, ADA, arrows & crosswalk</li>
+          <li>Practice ghosts or Test mode fade-out</li>
+        </ul>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btn-start">Start Training</button>
+          <button class="btn btn-primary" id="btn-start">Enter Simulator</button>
         </div>
       </div>
     </section>
@@ -87,7 +93,7 @@ function selectScreen() {
     <section class="screen panel-screen active">
       <div class="card">
         <h1>Select Mission</h1>
-        <p class="subtitle">Choose a scenario and training mode. Practice shows clear guides; Test fades them as you progress.</p>
+        <p class="subtitle">Pick a scenario and mode. Practice shows clear ghost guides; Test fades them as you work.</p>
 
         <div class="mode-toggle" role="group" aria-label="Training mode">
           <button type="button" class="btn btn-secondary ${state.mode === 'practice' ? 'active' : ''}" data-mode="practice">Practice</button>
@@ -98,7 +104,7 @@ function selectScreen() {
 
         <div class="btn-row">
           <button class="btn btn-secondary" id="btn-back-start">Back</button>
-          <button class="btn btn-primary" id="btn-launch">Begin Mission</button>
+          <button class="btn btn-primary" id="btn-launch">Launch Mission</button>
         </div>
       </div>
     </section>
@@ -106,15 +112,15 @@ function selectScreen() {
 }
 
 function bindSelect() {
-  document.querySelectorAll('.mission-card').forEach((el) => {
-    el.onclick = () => {
-      state.missionId = Number(el.dataset.id);
+  document.querySelectorAll('[data-mode]').forEach((btn) => {
+    btn.onclick = () => {
+      state.mode = btn.dataset.mode;
       render();
     };
   });
-  document.querySelectorAll('[data-mode]').forEach((el) => {
-    el.onclick = () => {
-      state.mode = el.dataset.mode;
+  document.querySelectorAll('.mission-card').forEach((card) => {
+    card.onclick = () => {
+      state.missionId = Number(card.dataset.id);
       render();
     };
   });
@@ -129,108 +135,84 @@ function bindSelect() {
 }
 
 function gameScreen() {
-  const mission = MISSIONS.find((m) => m.id === state.missionId);
-  const swatches = ['white', 'yellow', 'blue']
-    .map((c) => {
-      const allowed = mission.allowedColors.includes(c);
-      return `<button type="button" class="swatch ${c === mission.allowedColors[0] ? 'active' : ''}" data-color="${c}" title="${c}${allowed ? '' : ' (not used)'}" ${allowed ? '' : 'style="opacity:0.35"' } aria-label="${c} paint"></button>`;
-    })
-    .join('');
-
+  const m = MISSIONS.find((x) => x.id === state.missionId) || MISSIONS[0];
   return `
     <section class="screen game-screen active">
-      <header class="hud">
-        <div class="hud-group">
-          <span class="hud-label">Score</span>
-          <span class="score-pill"><span class="hud-value" id="hud-score">0%</span></span>
+      <div id="viewport" class="viewport"></div>
+      <div class="hud">
+        <div class="hud-top">
+          <div class="hud-block">
+            <span class="hud-label">Mission</span>
+            <span class="hud-value" id="hud-mission">${m.title}</span>
+          </div>
+          <div class="hud-block">
+            <span class="hud-label">Mode</span>
+            <span class="hud-value" id="hud-mode">${state.mode}</span>
+          </div>
+          <div class="hud-block">
+            <span class="hud-label">Paint</span>
+            <span class="hud-value paint-swatch" id="hud-color">
+              <i id="hud-swatch" style="background:${COLORS[m.allowedColors[0]]}"></i>
+              <span id="hud-color-name">${m.allowedColors[0]}</span>
+            </span>
+          </div>
+          <div class="hud-block">
+            <span class="hud-label">Speed</span>
+            <span class="hud-value" id="hud-speed">0 mph</span>
+          </div>
         </div>
-        <div class="hud-group">
-          <span class="hud-label">Paint</span>
-          <div class="color-swatches" id="swatches">${swatches}</div>
+        <div class="hud-bottom">
+          <div class="hud-tip" id="hud-tip">${m.brief}</div>
+          <div class="hud-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-abort">Abort</button>
+            <button class="btn btn-primary btn-sm" id="btn-submit">Submit Score</button>
+          </div>
         </div>
-        <div class="brief">
-          <strong>Mission ${mission.id}:</strong> ${mission.brief}
+        <div class="hud-help">
+          <span>WASD / Arrows drive</span>
+          <span>Space / LMB spray</span>
+          <span>1 White · 2 Yellow · 3 Blue</span>
+          <span>Enter submit</span>
         </div>
-        <div class="hud-group">
-          <span class="badge">${state.mode === 'practice' ? 'Practice' : 'Test'}</span>
-          <button class="btn btn-secondary" id="btn-abort" type="button">Exit</button>
-          <button class="btn btn-primary" id="btn-finish" type="button">Submit</button>
-        </div>
-      </header>
-      <div class="canvas-wrap">
-        <canvas id="game-canvas" width="1000" height="700" aria-label="Parking lot painting canvas"></canvas>
       </div>
-      <footer class="tips-bar">
-        <strong>Tips:</strong> ${mission.tips[0]}
-        &nbsp;·&nbsp; Paint: hold mouse &nbsp;·&nbsp;
-        Colors: <kbd>1</kbd> White <kbd>2</kbd> Yellow <kbd>3</kbd> Blue
-        &nbsp;·&nbsp; Pan: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-        &nbsp;·&nbsp; <kbd>Enter</kbd> submit
-      </footer>
     </section>
   `;
 }
 
 function bindGame() {
-  const mission = MISSIONS.find((m) => m.id === state.missionId);
-  const canvas = document.getElementById('game-canvas');
-  const scoreEl = document.getElementById('hud-score');
-
-  const game = new StripingGame(canvas, {
-    mission,
+  const viewport = document.getElementById('viewport');
+  state.game = new StripingGame(viewport, {
+    missionId: state.missionId,
     mode: state.mode,
-    onScore(result) {
-      scoreEl.textContent = `${result.score}%`;
-      scoreEl.style.color =
-        result.score >= PASS_THRESHOLD ? 'var(--success)' : 'var(--text)';
+    onHud: (data) => {
+      const sw = document.getElementById('hud-swatch');
+      const cn = document.getElementById('hud-color-name');
+      const tip = document.getElementById('hud-tip');
+      const spd = document.getElementById('hud-speed');
+      if (sw) sw.style.background = COLORS[data.color] || '#fff';
+      if (cn) cn.textContent = data.color;
+      if (tip && data.tip) tip.textContent = data.tip;
+      if (spd) spd.textContent = `${(data.speed * 2.2).toFixed(0)} mph`;
     },
-    onComplete(result) {
-      state.lastResults = {
-        ...result,
-        missionId: mission.id,
-        missionTitle: mission.title,
-        mode: state.mode,
-      };
+    onComplete: (results) => {
+      state.lastResults = results;
       state.screen = 'results';
       render();
     },
   });
 
-  state.game = game;
-  game.start();
-
-  document.querySelectorAll('.swatch').forEach((el) => {
-    el.onclick = () => {
-      const c = el.dataset.color;
-      if (!mission.allowedColors.includes(c)) return;
-      game.setColor(c);
-      document.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
-      el.classList.add('active');
-    };
-  });
-
-  // Keep swatch UI in sync when keys change color
-  window.addEventListener(
-    'keydown',
-    function syncSwatch(e) {
-      if (!state.game) {
-        window.removeEventListener('keydown', syncSwatch);
-        return;
-      }
-      const map = { '1': 'white', '2': 'yellow', '3': 'blue' };
-      const c = map[e.key];
-      if (!c || !mission.allowedColors.includes(c)) return;
-      document.querySelectorAll('.swatch').forEach((s) => {
-        s.classList.toggle('active', s.dataset.color === c);
-      });
-    }
-  );
-
-  document.getElementById('btn-finish').onclick = () => game.finish();
   document.getElementById('btn-abort').onclick = () => {
     state.screen = 'select';
     render();
   };
+  document.getElementById('btn-submit').onclick = () => {
+    state.game?.submit();
+  };
+
+  // Focus canvas for keys
+  requestAnimationFrame(() => {
+    state.game?.renderer?.domElement?.focus();
+  });
 }
 
 function resultsScreen() {
@@ -239,46 +221,44 @@ function resultsScreen() {
     coverage: 0,
     overspray: 0,
     wrongColor: 0,
-    pass: false,
-    missionTitle: 'Mission',
-    mode: 'practice',
+    passed: false,
+    missionTitle: '—',
+    mode: state.mode,
+    threshold: PASS_THRESHOLD,
   };
-  const passFail = r.pass ? 'PASS' : 'NEEDS IMPROVEMENT';
-  const cls = r.pass ? 'pass' : 'fail';
-
+  const passClass = r.passed ? 'pass' : 'fail';
   return `
     <section class="screen panel-screen active">
-      <div class="card">
+      <div class="card results-card">
         <div class="badge-row">
           <span class="badge">${r.missionTitle}</span>
-          <span class="badge">${r.mode === 'practice' ? 'Practice' : 'Test'}</span>
+          <span class="badge">${r.mode}</span>
         </div>
-        <h1>Results</h1>
-        <div class="results-score ${cls}">${r.score}%</div>
-        <p class="results-label">${passFail} · Threshold ${PASS_THRESHOLD}%</p>
+        <h1 class="${passClass}">${r.passed ? 'PASS' : 'NEEDS WORK'}</h1>
+        <p class="subtitle">Score ${r.score}% · pass at ${r.threshold}%</p>
 
-        <div class="breakdown">
-          <div class="breakdown-row">
-            <span>Guide coverage</span>
-            <span>${r.coverage}%</span>
+        <div class="score-grid">
+          <div class="score-cell">
+            <span class="hud-label">Coverage</span>
+            <span class="hud-value">${r.coverage}%</span>
           </div>
-          <div class="breakdown-row">
-            <span>Overspray</span>
-            <span>${r.overspray}%</span>
+          <div class="score-cell">
+            <span class="hud-label">Overspray penalty</span>
+            <span class="hud-value">−${r.overspray}</span>
           </div>
-          <div class="breakdown-row">
-            <span>Wrong color on guides</span>
-            <span>${r.wrongColor}%</span>
+          <div class="score-cell">
+            <span class="hud-label">Wrong color</span>
+            <span class="hud-value">−${r.wrongColor}</span>
           </div>
-          <div class="breakdown-row">
-            <span>Overall score</span>
-            <span>${r.score}%</span>
+          <div class="score-cell highlight">
+            <span class="hud-label">Final</span>
+            <span class="hud-value">${r.score}%</span>
           </div>
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-secondary" id="btn-retry">Retry Mission</button>
-          <button class="btn btn-secondary" id="btn-missions">Mission Select</button>
+          <button class="btn btn-secondary" id="btn-retry">Retry</button>
+          <button class="btn btn-secondary" id="btn-missions">Missions</button>
           <button class="btn btn-primary" id="btn-home">Home</button>
         </div>
       </div>
