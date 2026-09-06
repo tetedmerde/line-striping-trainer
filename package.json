@@ -1,9 +1,9 @@
 {
   "name": "line-striping-trainer",
   "private": true,
-  "version": "3.0.0",
+  "version": "3.1.0",
   "type": "module",
-  "description": "HOOKERS top-down LineLazer striping trainer on Supercenter #2855 plan lot",
+  "description": "HOOKERS 3D LineLazer trainer \u2014 #2855 blacktop, AutoLayout dots, laser lock",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

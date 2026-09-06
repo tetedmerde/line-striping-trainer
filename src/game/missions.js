@@ -1,4 +1,6 @@
-/** Mission guides in plan-image pixel space (walmart-plan-2855.jpg = 2048×1822). */
+/** Mission guides in plan-image pixel space (2048×1822) — geometry from #2855 lotLayout. */
+
+import { STALL_BANKS, expandStallBank, ADA_ZONES, STOP_CROSSWALK, FIRE_LANE } from './lotLayout.js';
 
 export const PLAN_W = 2048;
 export const PLAN_H = 1822;
@@ -31,21 +33,20 @@ function g(id, color, ax, ay, bx, by, width = 4, label = '') {
   };
 }
 
-/** Parallel stall dividers along a bay (multi-bay laser-lock run). */
-function stallBay(prefix, color, x0, y0, x1, y1, count, width = 4) {
-  /** @type {Guide[]} */
-  const out = [];
-  for (let i = 0; i <= count; i++) {
-    const t = i / count;
-    const ax = x0 + (x1 - x0) * t;
-    const ay = y0 + (y1 - y0) * t;
-    const ang = -0.95;
-    const depth = 95;
-    const dx = Math.cos(ang) * depth;
-    const dy = Math.sin(ang) * depth;
-    out.push(
-      g(`${prefix}-${i}`, color, ax - dx * 0.15, ay - dy * 0.15, ax + dx, ay + dy, width)
-    );
+function adaGuides(zone, prefix) {
+  const { x0, y0, x1, y1 } = zone;
+  const mid = (x0 + x1) / 2;
+  const out = [
+    g(`${prefix}-l`, 'blue', x0, y0, x0, y1, 5, 'border'),
+    g(`${prefix}-r`, 'blue', x1, y0, x1, y1, 5, 'border'),
+    g(`${prefix}-t`, 'blue', x0, y0, x1, y0, 5, 'border'),
+    g(`${prefix}-b`, 'blue', x0, y1, x1, y1, 5, 'border'),
+    g(`${prefix}-m`, 'blue', mid, y0, mid, y1, 4, 'divider'),
+  ];
+  for (let i = 0; i < 3; i++) {
+    const t = 0.25 + i * 0.2;
+    const x = x0 + (x1 - x0) * t;
+    out.push(g(`${prefix}-h${i}`, 'blue', x - 5, y0 + 12, x + 8, y1 - 12, 4, 'hash'));
   }
   return out;
 }
@@ -55,54 +56,50 @@ export const MISSIONS = [
     id: 1,
     title: '1 · Angled Stall Lines',
     brief:
-      'HOOKERS specialty — yellow 4″ stall dividers. Aim laser at helper target → L lock → Space spray. Helper walks the box down the bay as you coat.',
+      'LAYOUT: Hookers crew puts AutoLayout pre-mark dots on angled yellow stalls. STRIPE: aim LazerGuide through dots → L lock → Space coat. Y skips layout.',
     allowedColors: ['yellow'],
-    spawn: { x: 620, y: 1180, rot: -0.95 },
+    spawn: { x: 520, y: 1050, rot: -0.95 },
     view: { x: 720, y: 1120, zoom: 1.55 },
     guides: [
-      ...stallBay('stall-a', 'yellow', 560, 1080, 900, 1280, 8),
-      ...stallBay('stall-b', 'yellow', 500, 1180, 840, 1380, 8),
+      ...expandStallBank(STALL_BANKS[0]),
+      ...expandStallBank(STALL_BANKS[1]),
     ],
   },
   {
     id: 2,
     title: '2 · ADA Near Vestibules',
     brief:
-      'Blue accessible borders & hashes by the doors. Mission wants BLUE (3). Lock long borders; unlock for short hashes. Helper advances the target box.',
+      'Crew dots the blue ADA borders & hashes by GR/GM doors. Connect dots with BLUE (3). Y skips layout → stripe.',
     allowedColors: ['blue'],
-    spawn: { x: 880, y: 780, rot: Math.PI / 2 },
+    spawn: { x: 780, y: 780, rot: Math.PI / 2 },
     view: { x: 940, y: 760, zoom: 1.85 },
-    guides: [
-      g('ada-l', 'blue', 900, 700, 900, 820, 5, 'border'),
-      g('ada-r', 'blue', 1020, 700, 1020, 820, 5, 'border'),
-      g('ada-t', 'blue', 900, 700, 1020, 700, 5, 'border'),
-      g('ada-b', 'blue', 900, 820, 1020, 820, 5, 'border'),
-      g('ada-m1', 'blue', 940, 700, 940, 820, 4, 'divider'),
-      g('ada-m2', 'blue', 980, 700, 980, 820, 4, 'divider'),
-      g('ada-h1', 'blue', 955, 730, 965, 810, 4, 'hash'),
-      g('ada-h2', 'blue', 970, 730, 980, 810, 4, 'hash'),
-      g('ada-h3', 'blue', 945, 730, 955, 810, 4, 'hash'),
-    ],
+    guides: [...adaGuides(ADA_ZONES[0], 'ada-gr'), ...adaGuides(ADA_ZONES[1], 'ada-gm')],
   },
   {
     id: 3,
     title: '3 · Stop · SECP · Fire Lane',
     brief:
-      'White stop bar & crosswalk ticks; yellow fire-lane & arrows. Helper walks the box ahead on long runs so laser stay useful.',
+      'Dots on white stop/crosswalk + yellow fire-lane & arrows. Layout then stripe. Helper still walks the target box.',
     allowedColors: ['white', 'yellow'],
     spawn: { x: 980, y: 980, rot: Math.PI },
     view: { x: 1000, y: 900, zoom: 1.45 },
     guides: [
-      g('stop', 'white', 820, 880, 1180, 880, 10, 'stop-bar'),
-      g('cw1', 'white', 860, 820, 860, 860, 8, 'crosswalk'),
-      g('cw2', 'white', 900, 820, 900, 860, 8, 'crosswalk'),
-      g('cw3', 'white', 940, 820, 940, 860, 8, 'crosswalk'),
-      g('cw4', 'white', 980, 820, 980, 860, 8, 'crosswalk'),
-      g('cw5', 'white', 1020, 820, 1020, 860, 8, 'crosswalk'),
-      g('cw6', 'white', 1060, 820, 1060, 860, 8, 'crosswalk'),
-      g('fire', 'yellow', 700, 650, 1300, 650, 5, 'fire-lane'),
-      g('arr1', 'yellow', 920, 980, 920, 920, 6, 'arrow'),
-      g('arr2', 'yellow', 1080, 980, 1080, 920, 6, 'arrow'),
+      g(
+        'stop',
+        'white',
+        STOP_CROSSWALK.stopX0,
+        STOP_CROSSWALK.stopY,
+        STOP_CROSSWALK.stopX1,
+        STOP_CROSSWALK.stopY,
+        10,
+        'stop-bar'
+      ),
+      ...STOP_CROSSWALK.cwXs.map((x, i) =>
+        g(`cw${i}`, 'white', x, STOP_CROSSWALK.cwY0, x, STOP_CROSSWALK.cwY1, 8, 'crosswalk')
+      ),
+      g('fire', 'yellow', FIRE_LANE.x0, FIRE_LANE.y, FIRE_LANE.x1, FIRE_LANE.y, 5, 'fire-lane'),
+      g('arr1', 'yellow', 920, 1000, 920, 920, 6, 'arrow'),
+      g('arr2', 'yellow', 1080, 1000, 1080, 920, 6, 'arrow'),
     ],
   },
 ];

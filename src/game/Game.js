@@ -8,6 +8,7 @@ import { COLORS, PASS_THRESHOLD, getMission } from './missions.js';
 import { PaintLayer } from './paint.js';
 import { Striper } from './striper.js';
 import { HelperCrew } from './helper.js';
+import { LayoutCrew } from './layoutCrew.js';
 import { createWorld, createGuideMeshes, setActiveGuideMesh } from './world.js';
 import { GameCamera } from './camera.js';
 import { planToWorld } from './coords.js';
@@ -53,14 +54,15 @@ export class Game {
     this.paint = new PaintLayer();
     this.striper = new Striper();
     this.helper = new HelperCrew();
+    this.layout = new LayoutCrew();
 
     this.laserLine = null;
-    this.laserGlow = null;
 
     this.mission = getMission(1);
     this.laserOn = true;
     this.onTarget = false;
     this.laserHitGuide = null;
+    this.dotSnapGuide = null;
     this.colorKey = 'yellow';
     this.spraying = false;
     this.lastScore = null;
@@ -71,6 +73,8 @@ export class Game {
     this._raf = 0;
     this._last = 0;
     this._laserState = 'AIMING';
+    /** @type {'LAYOUT'|'STRIPE'} */
+    this.phase = 'LAYOUT';
 
     this._onResize = () => this.resize();
     window.addEventListener('resize', this._onResize);
@@ -83,8 +87,8 @@ export class Game {
 
     this.scene.add(this.striper.root);
     this.scene.add(this.helper.root);
+    this.scene.add(this.layout.root);
 
-    // Laser beam (line + soft glow sprite optional)
     const laserGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(),
       new THREE.Vector3(0, 0, 1),
@@ -101,8 +105,7 @@ export class Game {
     this.laserLine.frustumCulled = false;
     this.scene.add(this.laserLine);
 
-    // Ambient paint-crew NPCs (non-NSFW)
-    this.crewAmbient = makeAmbientCrew(this.scene, 8);
+    this.crewAmbient = makeAmbientCrew(this.scene, 5);
 
     this.setMission(1);
   }
@@ -162,10 +165,15 @@ export class Game {
     this.guideGroup = createGuideMeshes(this.mission.guides, this.helper.guideIndex);
     this.scene.add(this.guideGroup);
 
+    // AutoLayout pre-mark phase
+    this.phase = 'LAYOUT';
+    const n = this.layout.beginLayout(this.mission.guides);
+    this.hud.setPhase('LAYOUT');
     this.hud.setMission(this.mission);
     this.hud.setScore(null);
     this.hud.setHelper(this.helper.status);
-    this.toast(`Mission: ${this.mission.title}`);
+    this.hud.setLayout(this.layout.status);
+    this.toast(`LAYOUT — crew placing ${n} pre-mark dots (Y skip)`);
   }
 
   setColor(key) {
@@ -175,7 +183,23 @@ export class Game {
     this.hud.setPaint(key);
   }
 
+  skipLayout() {
+    if (this.phase !== 'LAYOUT') {
+      this.toast('Already in STRIPE phase');
+      return;
+    }
+    this.layout.skipToStripe();
+    this.phase = 'STRIPE';
+    this.hud.setPhase('STRIPE');
+    this.hud.setLayout(this.layout.status);
+    this.toast('STRIPE — connect the dots with laser lock');
+  }
+
   tryLock() {
+    if (this.phase === 'LAYOUT') {
+      this.toast('Wait for LAYOUT dots — or press Y to skip');
+      return;
+    }
     if (this.striper.locked) {
       this.striper.unlock();
       this.hud.setLock(false);
@@ -186,24 +210,35 @@ export class Game {
       this.toast('Turn laser on (G) first');
       return;
     }
-    if (!this.onTarget || !this.laserHitGuide) {
-      this.toast('Laser must be ON TARGET to lock');
+    const guide = this.laserHitGuide || this.dotSnapGuide;
+    if (!this.onTarget && !this.dotSnapGuide) {
+      this.toast('Laser must hit helper target or align dots to lock');
       return;
     }
-    this.striper.lock(this.laserHitGuide);
+    if (!guide) {
+      this.toast('No guide under laser');
+      return;
+    }
+    this.striper.lock(guide);
     this.hud.setLock(true);
-    this.toast('LOCKED — hold path, Space to spray');
+    this.toast(guide.fromDots ? 'LOCKED on dots — Space to spray' : 'LOCKED — hold path, Space to spray');
   }
 
   submitScore() {
     const result = this.paint.score(this.mission.guides, this.mission.allowedColors);
-    this.lastScore = result;
-    const pass = result.coverage >= PASS_THRESHOLD;
-    this.hud.setScore(result.coverage, pass);
+    const dots = this.layout.scoreDotBonus(this.paint);
+    // Prefer connecting dots: blend coverage with dot hit rate
+    let coverage = result.coverage;
+    if (dots.total > 0) {
+      coverage = Math.round(result.coverage * 0.55 + dots.bonus * 0.45);
+    }
+    const pass = coverage >= PASS_THRESHOLD;
+    this.lastScore = { ...result, coverage, dots };
+    this.hud.setScore(coverage, pass);
     this.toast(
       pass
-        ? `HOOKERS pass — ${result.coverage}% coverage`
-        : `Need ${PASS_THRESHOLD}%+ — got ${result.coverage}%`
+        ? `HOOKERS pass — ${coverage}% (dots ${dots.hit}/${dots.total})`
+        : `Need ${PASS_THRESHOLD}%+ — got ${coverage}% (dots ${dots.hit}/${dots.total})`
     );
   }
 
@@ -226,20 +261,15 @@ export class Game {
       precision: this.keys.has('shift'),
     };
 
-    this.spraying = this.keys.has(' ') || this.keys.has('space');
+    this.spraying = (this.keys.has(' ') || this.keys.has('space')) && this.phase === 'STRIPE';
     this.striper.update(dt, input);
 
-    // Helper call forward/back (H hold + ]/[ or just hold period/comma already nudges)
     if (this.keys.has('=') || this.keys.has('h')) {
-      // H alone: call helper toward far end relative to tip
       const tip = this.striper.tip();
-      const tpos = this.helper.getTargetPlan();
       const g = this.helper.guide;
       if (g) {
-        const proj = tip;
-        // walk target away from tip along guide
         const tipT =
-          ((proj.x - g.a.x) * (g.b.x - g.a.x) + (proj.y - g.a.y) * (g.b.y - g.a.y)) /
+          ((tip.x - g.a.x) * (g.b.x - g.a.x) + (tip.y - g.a.y) * (g.b.y - g.a.y)) /
           (((g.b.x - g.a.x) ** 2 + (g.b.y - g.a.y) ** 2) || 1);
         const dir = this.helper.targetT >= tipT ? 1 : -1;
         this.helper.callAlong(dir, dt);
@@ -257,7 +287,6 @@ export class Game {
       }
     }
 
-    // Auto-advance helper while striping
     const adv = this.helper.autoAdvance(
       this.striper.tip(),
       this.striper.locked,
@@ -274,6 +303,16 @@ export class Game {
     }
 
     this.helper.update(dt);
+
+    // Layout crew dots
+    const layoutRes = this.layout.update(dt);
+    if (layoutRes.justFinished) {
+      this.phase = 'STRIPE';
+      this.hud.setPhase('STRIPE');
+      this.toast('LAYOUT done — connect the dots with LazerGuide');
+    }
+    this.hud.setLayout(this.layout.status);
+
     this._updateLaser();
     this.helper.setOnTarget(this.onTarget);
 
@@ -302,20 +341,24 @@ export class Game {
       ? 'OFF'
       : this.striper.locked
         ? 'LOCKED'
-        : this.onTarget
+        : this.onTarget || this.dotSnapGuide
           ? 'ON TARGET'
           : 'AIMING';
-    this.hud.setLaser(this.laserOn, this.onTarget, this._laserState);
-    this.hud.setTarget(this.onTarget ? 'ON TARGET' : 'SEEK');
+    this.hud.setLaser(this.laserOn, this.onTarget || !!this.dotSnapGuide, this._laserState);
+    this.hud.setTarget(
+      this.onTarget ? 'ON TARGET' : this.dotSnapGuide ? 'DOTS ALIGN' : 'SEEK'
+    );
     this.hud.setLock(this.striper.locked);
     this.hud.setHelper(this.helper.status);
     this.hud.setCam(this.camCtrl.mode);
+    this.hud.setPhase(this.phase);
   }
 
   _updateLaser() {
     this.onTarget = false;
     this.laserHitGuide = null;
-    if (!this.laserOn) return;
+    this.dotSnapGuide = null;
+    if (!this.laserOn || this.phase === 'LAYOUT') return;
 
     const tip = this.striper.tip();
     const hx = Math.cos(this.striper.rot);
@@ -334,12 +377,19 @@ export class Game {
         this.laserHitGuide = this.helper.guide || this.mission.guides[this.helper.guideIndex];
       }
     }
+
+    // Dot-to-dot snap (Graco connect-the-dots)
+    const snap = this.layout.snapGuideFromLaser(tip, this.striper.rot, LASER_RANGE_PX, 20);
+    if (snap) {
+      this.dotSnapGuide = snap;
+      if (!this.laserHitGuide) this.laserHitGuide = snap;
+    }
   }
 
   _updateLaserVisual() {
     if (!this.laserLine) return;
-    this.laserLine.visible = this.laserOn;
-    if (!this.laserOn) return;
+    this.laserLine.visible = this.laserOn && this.phase !== 'LAYOUT';
+    if (!this.laserOn || this.phase === 'LAYOUT') return;
 
     const tipW = this.striper.tipWorld();
     const hx = Math.cos(this.striper.rot);
@@ -350,14 +400,15 @@ export class Game {
     };
     if (this.onTarget) {
       endPlan = this.helper.getTargetPlan();
+    } else if (this.dotSnapGuide) {
+      endPlan = this.dotSnapGuide.b;
     }
     const endW = planToWorld(endPlan.x, endPlan.y);
     const positions = this.laserLine.geometry.attributes.position;
-    // Raise beam slightly above asphalt
     positions.setXYZ(0, tipW.x, 0.35, tipW.z);
     positions.setXYZ(1, endW.x, 0.45, endW.z);
     positions.needsUpdate = true;
-    this.laserLine.material.opacity = this.onTarget ? 0.95 : 0.55;
+    this.laserLine.material.opacity = this.onTarget || this.dotSnapGuide ? 0.95 : 0.55;
     this.laserLine.material.color.setHex(this.striper.locked ? 0xf5c518 : 0x3dff8a);
   }
 
@@ -388,8 +439,14 @@ export class Game {
       if (k === 'g') {
         this.laserOn = !this.laserOn;
         this.toast(this.laserOn ? 'Laser ON' : 'Laser OFF');
+      } else if (k === 'y') {
+        this.skipLayout();
+      } else if (k === 'p') {
+        if (this.world?.togglePlanOverlay) {
+          const on = this.world.togglePlanOverlay();
+          this.toast(on ? 'Plan reference ON (debug)' : 'Plan reference OFF — blacktop');
+        }
       } else if (k === 't') {
-        const prevGuide = this.helper.guide;
         const res = this.helper.cycleGuide(this.striper.tip());
         setActiveGuideMesh(this.guideGroup, this.helper.guideIndex);
         if (this.striper.locked && res.changedGuide) {
@@ -399,7 +456,6 @@ export class Game {
         } else {
           this.toast(`Target → guide ${this.helper.guideIndex + 1}/${this.mission.guides.length}`);
         }
-        void prevGuide;
       } else if (k === 'l' || k === 'f') {
         this.tryLock();
       } else if (k === '[' || k === ',') {
@@ -480,6 +536,8 @@ export function bindHud() {
   const paintState = document.getElementById('paint-state');
   const helperState = document.getElementById('helper-state');
   const camState = document.getElementById('cam-state');
+  const phaseState = document.getElementById('phase-state');
+  const layoutState = document.getElementById('layout-state');
   const toastEl = document.getElementById('toast');
   let toastTimer = 0;
 
@@ -507,7 +565,7 @@ export function bindHud() {
     },
     setTarget(text) {
       targetState.textContent = text;
-      targetState.classList.toggle('on', text === 'ON TARGET');
+      targetState.classList.toggle('on', text === 'ON TARGET' || text === 'DOTS ALIGN');
     },
     setLock(locked) {
       lockState.textContent = locked ? 'LOCKED' : 'FREE';
@@ -524,6 +582,16 @@ export function bindHud() {
     },
     setCam(mode) {
       if (camState) camState.textContent = (mode || 'chase').toUpperCase();
+    },
+    setPhase(phase) {
+      if (phaseState) {
+        phaseState.textContent = phase || '—';
+        phaseState.classList.toggle('layout', phase === 'LAYOUT');
+        phaseState.classList.toggle('stripe', phase === 'STRIPE');
+      }
+    },
+    setLayout(text) {
+      if (layoutState) layoutState.textContent = text || '—';
     },
     toast(msg) {
       toastEl.hidden = false;

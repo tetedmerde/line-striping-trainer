@@ -305,6 +305,11 @@ kbd {
   pointer-events: none;
 }
 
+
+#phase-state.layout { color: #f5c518; }
+#phase-state.stripe { color: var(--green); }
+#layout-state { font-size: 11px; max-width: 140px; text-align: right; line-height: 1.25; }
+
 @media (max-width: 900px) {
   #hud-left, #hud-right { width: 180px; }
   .controls { font-size: 11px; }
