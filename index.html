@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="HOOKERS top-down LineLazer striping trainer — Supercenter #2855 plan lot."
+    />
+    <title>HOOKERS — Line Striping Trainer</title>
+    <script type="module" crossorigin src="/line-striping-trainer/assets/index-CDr_Q88Z.js"></script>
+    <link rel="stylesheet" crossorigin href="/line-striping-trainer/assets/index-Bwn-8cOn.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+
+      <header id="hud-top">
+        <div class="brand">
+          <span class="crew">HOOKERS</span>
+          <span class="sub">Line Striping Trainer · #2855</span>
+        </div>
+        <div id="mission-title">Mission</div>
+        <div id="score-pill">Coverage —</div>
+      </header>
+
+      <aside id="hud-left">
+        <div class="panel">
+          <h2>Missions</h2>
+          <button type="button" class="mission-btn" data-mission="1">1 · Stall Lines</button>
+          <button type="button" class="mission-btn" data-mission="2">2 · ADA</button>
+          <button type="button" class="mission-btn" data-mission="3">3 · Arrows / Stop / Fire</button>
+        </div>
+        <div class="panel" id="brief-panel">
+          <h2>Brief</h2>
+          <p id="mission-brief"></p>
+        </div>
+      </aside>
+
+      <aside id="hud-right">
+        <div class="panel status">
+          <div class="row"><span>Laser</span><strong id="laser-state">OFF</strong></div>
+          <div class="row"><span>Target</span><strong id="target-state">—</strong></div>
+          <div class="row"><span>Lock</span><strong id="lock-state">FREE</strong></div>
+          <div class="row"><span>Paint</span><strong id="paint-state">YELLOW</strong></div>
+          <div class="swatches">
+            <button type="button" class="swatch" data-color="white" title="1 White"></button>
+            <button type="button" class="swatch active" data-color="yellow" title="2 Yellow"></button>
+            <button type="button" class="swatch" data-color="blue" title="3 Blue"></button>
+          </div>
+        </div>
+        <div class="panel tip" id="tip-panel">
+          Line up the green laser on the target box, press <kbd>L</kbd> to lock, then hold
+          <kbd>Space</kbd> while driving.
+        </div>
+      </aside>
+
+      <footer id="hud-bottom">
+        <div class="controls">
+          <span><kbd>WASD</kbd> move</span>
+          <span><kbd>G</kbd> laser</span>
+          <span><kbd>T</kbd> target</span>
+          <span><kbd>L</kbd>/<kbd>F</kbd> lock</span>
+          <span><kbd>Space</kbd> spray</span>
+          <span><kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> color</span>
+          <span><kbd>Enter</kbd> submit</span>
+          <span><kbd>R</kbd> clear</span>
+          <span><kbd>Scroll</kbd> zoom · drag pan</span>
+        </div>
+      </footer>
+
+      <div id="title-splash">
+        <div class="splash-card">
+          <p class="splash-crew">HOOKERS</p>
+          <h1>LineLazer Trainer</h1>
+          <p class="splash-sub">Top-down · Supercenter #2855 plan lot</p>
+          <ol>
+            <li><kbd>T</kbd> place target at end of guide</li>
+            <li>Drive so the green laser hits the box</li>
+            <li><kbd>L</kbd> lock · <kbd>Space</kbd> spray a clean stripe</li>
+            <li><kbd>Enter</kbd> score coverage</li>
+          </ol>
+          <button type="button" id="start-btn">Start striping</button>
+        </div>
+      </div>
+
+      <div id="toast" hidden></div>
+    </div>
+  </body>
+</html>
