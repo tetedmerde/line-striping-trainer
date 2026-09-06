@@ -2,6 +2,10 @@
 
 Browser-based training simulator for parking lot line striping.
 
+## Play online
+
+**Live:** https://tetedmerde.github.io/line-striping-trainer/
+
 ## Run locally
 
 ```bash
