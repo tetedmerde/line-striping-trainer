@@ -1,11 +1,11 @@
 :root {
   --bg: #0b0f14;
-  --panel: rgba(10, 16, 24, 0.82);
+  --panel: rgba(12, 16, 20, 0.72);
   --line: rgba(255, 255, 255, 0.12);
   --text: #e8eef7;
   --muted: #9aa8bc;
   --accent: #f5c518;
-  --green: #3dff8a;
+  --green: #5ad67a;
   --blue: #3b82f6;
   --danger: #ff5d5d;
   --brand: #ff4d6d;

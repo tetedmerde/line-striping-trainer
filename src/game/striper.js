@@ -31,9 +31,9 @@ export class Striper {
   _buildMesh() {
     const root = this.root;
     const steel = new THREE.MeshStandardMaterial({
-      color: 0x2a3340,
-      roughness: 0.45,
-      metalness: 0.55,
+      color: 0x323843,
+      roughness: 0.55,
+      metalness: 0.48,
     });
     const hookers = new THREE.MeshStandardMaterial({
       color: 0xff4d6d,
@@ -59,8 +59,8 @@ export class Striper {
       color: 0xf5c518,
       roughness: 0.4,
       metalness: 0.3,
-      emissive: 0xf5c518,
-      emissiveIntensity: 0.15,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
     });
 
     // Main frame / chassis
@@ -157,13 +157,13 @@ export class Striper {
     this.arm.add(tipGuard);
 
     this.nozzle = new THREE.Mesh(
-      new THREE.SphereGeometry(0.045, 12, 12),
+      new THREE.SphereGeometry(0.04, 12, 12),
       new THREE.MeshStandardMaterial({
-        color: 0x3dff8a,
-        emissive: 0x3dff8a,
-        emissiveIntensity: 0.55,
-        roughness: 0.3,
-        metalness: 0.2,
+        color: 0x2a3038,
+        emissive: 0x1a4a28,
+        emissiveIntensity: 0.15,
+        roughness: 0.45,
+        metalness: 0.55,
       })
     );
     this.nozzle.position.set(0, -0.48, 1.15);
@@ -178,7 +178,7 @@ export class Striper {
         roughness: 0.4,
         metalness: 0.6,
         emissive: 0x0a3d20,
-        emissiveIntensity: 0.3,
+        emissiveIntensity: 0.12,
       })
     );
     laserBox.position.set(0, 0.08, 0.2);

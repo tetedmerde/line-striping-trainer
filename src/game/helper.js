@@ -28,8 +28,8 @@ export class HelperCrew {
       color: 0xff8a3d,
       roughness: 0.55,
       metalness: 0.1,
-      emissive: 0xff6a00,
-      emissiveIntensity: 0.12,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
     });
     const skin = new THREE.MeshStandardMaterial({ color: 0xc68642, roughness: 0.75 });
     const pants = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.85 });
@@ -100,7 +100,7 @@ export class HelperCrew {
       new THREE.MeshStandardMaterial({
         color: 0xf5c518,
         emissive: 0xf5c518,
-        emissiveIntensity: 0.4,
+        emissiveIntensity: 0.12,
         roughness: 0.3,
       })
     );

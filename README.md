@@ -1,6 +1,6 @@
 # HOOKERS — Line Striping Trainer (3D)
 
-Browser **LineLazer-style** striping trainer for the **HOOKERS** paint crew. Hyper-real-ish Three.js lot built from Supercenter **#2855** (Shawnee KS) site plan geometry on **real asphalt blacktop** — not a plan-sheet wallpaper. Crew lays **AutoLayout pre-mark dots**; you connect them with **LazerGuide**.
+Browser **LineLazer-style** striping trainer for the **HOOKERS** paint crew. Hyper-real-ish Three.js lot built from Supercenter **#2855** (Shawnee KS) site plan geometry on **real asphalt blacktop** — not a plan-sheet wallpaper. **Start/stop endpoint marks** on each bay run; connect them with **LazerGuide**. Helper walks the reflective target box down the stalls.
 
 No trademarked store or equipment logos — crew branding **HOOKERS** stays. Facade reads **STORE**.
 
@@ -10,24 +10,23 @@ No trademarked store or equipment logos — crew branding **HOOKERS** stays. Fac
 
 Hard-refresh (Ctrl/Cmd+Shift+R) after deploys so the new build loads.
 
-## Core loop (Graco field flow)
+## Core loop
 
 1. Pick a mission (stalls / ADA / arrows-stop-firelane)
-2. **LAYOUT** — 2–3 Hookers guys walk the bay and place paint **pre-mark dots** along guides
-3. **STRIPE** — aim green laser through dots / at helper’s reflective target box → HUD **ON TARGET** / **DOTS ALIGN**
-4. **L** / **F** — **LOCK** path (tip constrained to the guide / dot run)
-5. Hold **Space** while moving — smooth continuous stripe connecting the dots
-6. Helper **auto-advances** the box down the row / to the next bay as you coat
-7. **Enter** — score coverage (prefers clean dot connects)
+2. **STRIPE** immediately — start & stop marks at endpoints of each stripe / bay run (no layout parade)
+3. Aim green laser through marks / at helper’s reflective target box → HUD **ON TARGET** / **DOTS ALIGN**
+4. **L** / **F** — **LOCK** path (tip constrained to the guide / endpoint run)
+5. Hold **Space** while moving — smooth continuous stripe connecting start→stop
+6. Helper **auto-advances** the box down the row / to the next bay as you coat (active marks highlight)
+7. **Enter** — score coverage (endpoint hits + path coat)
 
-Press **Y** anytime in LAYOUT to skip straight to STRIPE. **P** toggles a faint plan reference overlay (debug; default is blacktop only).
+**P** toggles a faint plan reference overlay (debug; default is blacktop only).
 
 ## Controls
 
 | Input | Action |
 |-------|--------|
 | **WASD** / arrows | Drive / steer |
-| **Y** | Skip LAYOUT → STRIPE |
 | **G** | Toggle laser |
 | **T** | Jump target to next bay / guide |
 | **[** / **]** or **,** / **.** | Nudge target along current guide |
@@ -56,5 +55,5 @@ Vite + Three.js r169. `base: '/line-striping-trainer/'` for GitHub Pages. Option
 
 - Browser-honest “hyper-real”: wet asphalt sheen, plan-derived islands/stalls/building, soft shadows, subtle bloom — not Unreal 5.
 - Default ground is **PBR asphalt**; plan sheet is optional debug, not the primary look.
-- Layout crew and helper are stylized NPCs; AutoLayout dots approximate field pre-mark spacing.
+- Helper and ambient crew are stylized NPCs; marks are start/stop endpoints only (no dotted layout ceremony).
 - Paint is a canvas coat projected on the lot (convincing from chase/top cams; not a volumetric fluid sim).

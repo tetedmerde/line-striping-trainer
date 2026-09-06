@@ -56,7 +56,7 @@ export const MISSIONS = [
     id: 1,
     title: '1 · Angled Stall Lines',
     brief:
-      'LAYOUT: Hookers crew puts AutoLayout pre-mark dots on angled yellow stalls. STRIPE: aim LazerGuide through dots → L lock → Space coat. Y skips layout.',
+      'Yellow angled stalls. Aim LazerGuide start→stop (or helper box) → L lock → Space coat. Helper walks the target down the bays.',
     allowedColors: ['yellow'],
     spawn: { x: 520, y: 1050, rot: -0.95 },
     view: { x: 720, y: 1120, zoom: 1.55 },
@@ -69,7 +69,7 @@ export const MISSIONS = [
     id: 2,
     title: '2 · ADA Near Vestibules',
     brief:
-      'Crew dots the blue ADA borders & hashes by GR/GM doors. Connect dots with BLUE (3). Y skips layout → stripe.',
+      'Blue ADA borders & hashes by GR/GM doors. Connect start→stop with BLUE (3). Helper holds the target box.',
     allowedColors: ['blue'],
     spawn: { x: 780, y: 780, rot: Math.PI / 2 },
     view: { x: 940, y: 760, zoom: 1.85 },
@@ -79,7 +79,7 @@ export const MISSIONS = [
     id: 3,
     title: '3 · Stop · SECP · Fire Lane',
     brief:
-      'Dots on white stop/crosswalk + yellow fire-lane & arrows. Layout then stripe. Helper still walks the target box.',
+      'White stop/crosswalk + yellow fire-lane & arrows. Start/stop marks only — lock & coat. Helper walks the target box.',
     allowedColors: ['white', 'yellow'],
     spawn: { x: 980, y: 980, rot: Math.PI },
     view: { x: 1000, y: 900, zoom: 1.45 },

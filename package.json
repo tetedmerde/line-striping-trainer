@@ -1,9 +1,9 @@
 {
   "name": "line-striping-trainer",
   "private": true,
-  "version": "3.1.0",
+  "version": "3.2.0",
   "type": "module",
-  "description": "HOOKERS 3D LineLazer trainer \u2014 #2855 blacktop, AutoLayout dots, laser lock",
+  "description": "HOOKERS 3D LineLazer trainer \u2014 #2855 blacktop, start/stop marks, laser lock",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

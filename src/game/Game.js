@@ -35,7 +35,7 @@ export class Game {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 0.95;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
@@ -73,8 +73,8 @@ export class Game {
     this._raf = 0;
     this._last = 0;
     this._laserState = 'AIMING';
-    /** @type {'LAYOUT'|'STRIPE'} */
-    this.phase = 'LAYOUT';
+    /** @type {'STRIPE'} */
+    this.phase = 'STRIPE';
 
     this._onResize = () => this.resize();
     window.addEventListener('resize', this._onResize);
@@ -96,9 +96,9 @@ export class Game {
     this.laserLine = new THREE.Line(
       laserGeo,
       new THREE.LineBasicMaterial({
-        color: 0x3dff8a,
+        color: 0x5cff7a,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.55,
         depthWrite: false,
       })
     );
@@ -115,7 +115,7 @@ export class Game {
     const h = this.canvas.clientHeight || window.innerHeight;
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.18, 0.4, 0.85);
+    const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.08, 0.55, 0.92);
     this.composer.addPass(bloom);
     this.composer.addPass(new OutputPass());
   }
@@ -165,15 +165,15 @@ export class Game {
     this.guideGroup = createGuideMeshes(this.mission.guides, this.helper.guideIndex);
     this.scene.add(this.guideGroup);
 
-    // AutoLayout pre-mark phase
-    this.phase = 'LAYOUT';
-    const n = this.layout.beginLayout(this.mission.guides);
-    this.hud.setPhase('LAYOUT');
+    // Instant start/stop endpoint marks — straight into STRIPE
+    this.phase = 'STRIPE';
+    this.layout.beginStripe(this.mission.guides, this.helper.guideIndex);
+    this.hud.setPhase('STRIPE');
     this.hud.setMission(this.mission);
     this.hud.setScore(null);
     this.hud.setHelper(this.helper.status);
     this.hud.setLayout(this.layout.status);
-    this.toast(`LAYOUT — crew placing ${n} pre-mark dots (Y skip)`);
+    this.toast('STRIPE — connect start→stop marks · lock on laser / helper');
   }
 
   setColor(key) {
@@ -183,23 +183,7 @@ export class Game {
     this.hud.setPaint(key);
   }
 
-  skipLayout() {
-    if (this.phase !== 'LAYOUT') {
-      this.toast('Already in STRIPE phase');
-      return;
-    }
-    this.layout.skipToStripe();
-    this.phase = 'STRIPE';
-    this.hud.setPhase('STRIPE');
-    this.hud.setLayout(this.layout.status);
-    this.toast('STRIPE — connect the dots with laser lock');
-  }
-
   tryLock() {
-    if (this.phase === 'LAYOUT') {
-      this.toast('Wait for LAYOUT dots — or press Y to skip');
-      return;
-    }
     if (this.striper.locked) {
       this.striper.unlock();
       this.hud.setLock(false);
@@ -261,7 +245,7 @@ export class Game {
       precision: this.keys.has('shift'),
     };
 
-    this.spraying = (this.keys.has(' ') || this.keys.has('space')) && this.phase === 'STRIPE';
+    this.spraying = this.keys.has(' ') || this.keys.has('space');
     this.striper.update(dt, input);
 
     if (this.keys.has('=') || this.keys.has('h')) {
@@ -295,22 +279,19 @@ export class Game {
     );
     if (adv?.changedGuide) {
       setActiveGuideMesh(this.guideGroup, this.helper.guideIndex);
+      this.layout.setActiveRun(this.helper.guideIndex);
+      this.hud.setLayout(this.layout.status);
       if (this.striper.locked) {
         this.striper.unlock();
         this.hud.setLock(false);
         this.toast(adv.unlockedHint || 'Helper moved target — re-lock');
+      } else {
+        this.toast(`Next bay marks · guide ${this.helper.guideIndex + 1}`);
       }
     }
 
     this.helper.update(dt);
-
-    // Layout crew dots
-    const layoutRes = this.layout.update(dt);
-    if (layoutRes.justFinished) {
-      this.phase = 'STRIPE';
-      this.hud.setPhase('STRIPE');
-      this.toast('LAYOUT done — connect the dots with LazerGuide');
-    }
+    this.layout.update(dt);
     this.hud.setLayout(this.layout.status);
 
     this._updateLaser();
@@ -358,7 +339,7 @@ export class Game {
     this.onTarget = false;
     this.laserHitGuide = null;
     this.dotSnapGuide = null;
-    if (!this.laserOn || this.phase === 'LAYOUT') return;
+    if (!this.laserOn) return;
 
     const tip = this.striper.tip();
     const hx = Math.cos(this.striper.rot);
@@ -388,8 +369,8 @@ export class Game {
 
   _updateLaserVisual() {
     if (!this.laserLine) return;
-    this.laserLine.visible = this.laserOn && this.phase !== 'LAYOUT';
-    if (!this.laserOn || this.phase === 'LAYOUT') return;
+    this.laserLine.visible = this.laserOn;
+    if (!this.laserOn) return;
 
     const tipW = this.striper.tipWorld();
     const hx = Math.cos(this.striper.rot);
@@ -439,8 +420,6 @@ export class Game {
       if (k === 'g') {
         this.laserOn = !this.laserOn;
         this.toast(this.laserOn ? 'Laser ON' : 'Laser OFF');
-      } else if (k === 'y') {
-        this.skipLayout();
       } else if (k === 'p') {
         if (this.world?.togglePlanOverlay) {
           const on = this.world.togglePlanOverlay();
@@ -449,6 +428,8 @@ export class Game {
       } else if (k === 't') {
         const res = this.helper.cycleGuide(this.striper.tip());
         setActiveGuideMesh(this.guideGroup, this.helper.guideIndex);
+        this.layout.setActiveRun(this.helper.guideIndex);
+        this.hud.setLayout(this.layout.status);
         if (this.striper.locked && res.changedGuide) {
           this.striper.unlock();
           this.hud.setLock(false);
@@ -585,9 +566,9 @@ export function bindHud() {
     },
     setPhase(phase) {
       if (phaseState) {
-        phaseState.textContent = phase || '—';
-        phaseState.classList.toggle('layout', phase === 'LAYOUT');
-        phaseState.classList.toggle('stripe', phase === 'STRIPE');
+        phaseState.textContent = phase || 'STRIPE';
+        phaseState.classList.remove('layout');
+        phaseState.classList.add('stripe');
       }
     },
     setLayout(text) {
