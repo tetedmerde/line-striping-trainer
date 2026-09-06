@@ -2,142 +2,235 @@ import * as THREE from 'three';
 import { COLOR_HEX } from './missions.js';
 
 /**
- * Driveable HOOKERS crew striping truck with side boom.
- * Easy hire-friendly handling: turn-in-place, precision crawl (Shift), strong reverse.
+ * HOOKERS LineLazer-style ride-on airless striper (generic silhouette —
+ * hopper, gun arm, tip+guard, laser emitter, rear drive + front casters).
+ * No Graco trademarks as logos.
  */
 export function createVehicle() {
   const root = new THREE.Group();
   root.name = 'vehicle';
 
-  const bodyMat = new THREE.MeshStandardMaterial({
+  const yellowMat = new THREE.MeshStandardMaterial({
     color: 0xeab308,
-    roughness: 0.45,
-    metalness: 0.25,
+    roughness: 0.42,
+    metalness: 0.28,
   });
-  const darkMat = new THREE.MeshStandardMaterial({
+  const frameMat = new THREE.MeshStandardMaterial({
     color: 0x1f2937,
-    roughness: 0.5,
-    metalness: 0.35,
+    roughness: 0.48,
+    metalness: 0.45,
   });
   const chromeMat = new THREE.MeshStandardMaterial({
     color: 0xcbd5e1,
-    roughness: 0.25,
-    metalness: 0.85,
+    roughness: 0.22,
+    metalness: 0.88,
   });
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    roughness: 0.15,
-    metalness: 0.4,
-    transparent: true,
-    opacity: 0.55,
+  const hopperMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.35,
+    metalness: 0.35,
   });
   const accentMat = new THREE.MeshStandardMaterial({
     color: 0xf97316,
     roughness: 0.4,
     metalness: 0.2,
     emissive: 0x9a3412,
-    emissiveIntensity: 0.25,
+    emissiveIntensity: 0.28,
+  });
+  const seatMat = new THREE.MeshStandardMaterial({
+    color: 0x111827,
+    roughness: 0.85,
+    metalness: 0.1,
+  });
+  const labelMat = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    roughness: 0.55,
+    metalness: 0.2,
   });
 
-  const bed = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.55, 4.2), bodyMat);
-  bed.position.set(0, 0.85, 0);
-  bed.castShadow = true;
-  bed.receiveShadow = true;
-  root.add(bed);
+  // —— Chassis / frame (ride-on LineDriver-ish silhouette) ——
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.18, 2.55), frameMat);
+  deck.position.set(0, 0.55, 0.05);
+  deck.castShadow = true;
+  deck.receiveShadow = true;
+  root.add(deck);
 
-  const cab = new THREE.Mesh(new THREE.BoxGeometry(2.05, 1.15, 1.5), bodyMat);
-  cab.position.set(0, 1.55, -1.55);
-  cab.castShadow = true;
-  root.add(cab);
+  const keel = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 2.2), frameMat);
+  keel.position.set(0, 0.38, 0.1);
+  root.add(keel);
 
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.7, 0.12), glassMat);
-  glass.position.set(0, 1.7, -2.28);
-  root.add(glass);
+  // Rear drive housing
+  const driveBox = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.45, 0.7), yellowMat);
+  driveBox.position.set(0, 0.72, -0.95);
+  driveBox.castShadow = true;
+  root.add(driveBox);
 
-  const tank = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55, 0.55, 1.6, 16),
-    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.4 })
+  // Front nacelle / pump housing
+  const pump = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.55, 0.85), yellowMat);
+  pump.position.set(0, 0.88, 0.85);
+  pump.castShadow = true;
+  root.add(pump);
+
+  // Generic “airless striper” plate (not a trademark logo)
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.14, 0.04), labelMat);
+  plate.position.set(0, 0.95, 1.28);
+  root.add(plate);
+
+  // Paint hopper(s)
+  const hopper = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.38, 0.42, 0.7, 18),
+    hopperMat
   );
-  tank.rotation.z = Math.PI / 2;
-  tank.position.set(0, 1.45, 0.55);
-  tank.castShadow = true;
-  root.add(tank);
+  hopper.position.set(0, 1.35, 0.55);
+  hopper.castShadow = true;
+  root.add(hopper);
+  const hopperLid = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.06, 18), chromeMat);
+  hopperLid.position.set(0, 1.72, 0.55);
+  root.add(hopperLid);
+  const hopper2 = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.24, 0.45, 14),
+    hopperMat
+  );
+  hopper2.position.set(-0.48, 1.15, 0.15);
+  hopper2.castShadow = true;
+  root.add(hopper2);
 
-  // Door / side HOOKERS stripe
-  const sideStripe = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 1.8), accentMat);
-  sideStripe.position.set(1.12, 1.05, -0.2);
+  // Operator seat
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.5), seatMat);
+  seat.position.set(0, 1.05, -0.55);
+  root.add(seat);
+  const seatBack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.1), seatMat);
+  seatBack.position.set(0, 1.28, -0.78);
+  root.add(seatBack);
+
+  // Steering column / handlebar
+  const column = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.7, 8), chromeMat);
+  column.position.set(0, 1.25, 0.15);
+  column.rotation.x = 0.35;
+  root.add(column);
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), chromeMat);
+  bar.rotation.z = Math.PI / 2;
+  bar.position.set(0, 1.55, 0.02);
+  root.add(bar);
+
+  // HOOKERS crew branding
+  addHookersDecal(root, 0, 1.05, -0.95, 0.14);
+  addHookersDecal(root, 0.7, 0.85, 0.2, 0.12, Math.PI / 2);
+  addHookersDecal(root, -0.7, 0.85, 0.2, 0.12, -Math.PI / 2);
+
+  const sideStripe = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 1.4), accentMat);
+  sideStripe.position.set(0.68, 0.72, 0.1);
   root.add(sideStripe);
   const sideStripeL = sideStripe.clone();
-  sideStripeL.position.x = -1.12;
+  sideStripeL.position.x = -0.68;
   root.add(sideStripeL);
 
-  // Cab roof HOOKERS letter blocks (generic block letters)
-  addHookersDecal(root, 0, 2.25, -1.55, 0.22);
-  // Bed side panel letters
-  addHookersDecal(root, 1.14, 1.15, 0.6, 0.16, Math.PI / 2);
-  addHookersDecal(root, -1.14, 1.15, 0.6, 0.16, -Math.PI / 2);
+  // Warning beacon
+  const beacon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.1, 0.18, 10),
+    new THREE.MeshStandardMaterial({
+      color: 0xf97316,
+      emissive: 0xea580c,
+      emissiveIntensity: 0.7,
+    })
+  );
+  beacon.position.set(0.35, 1.55, -0.95);
+  root.add(beacon);
 
+  // —— Gun arm / spray gun (offset right, LineLazer-style) ——
   const boom = new THREE.Group();
   boom.name = 'boom';
-  const boomArm = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 0.1), chromeMat);
-  boomArm.position.set(1.9, 0, 0);
-  boom.add(boomArm);
-  const boomDrop = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 8), chromeMat);
-  boomDrop.position.set(3.05, -0.3, 0);
-  boom.add(boomDrop);
 
-  // Boom HOOKERS wrap
-  const boomTag = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.12), accentMat);
-  boomTag.position.set(1.6, 0.08, 0);
-  boom.add(boomTag);
+  const armPivot = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.2), chromeMat);
+  armPivot.position.set(0, 0, 0);
+  boom.add(armPivot);
+
+  const boomArm = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.08, 0.08), chromeMat);
+  boomArm.position.set(0.95, 0, 0);
+  boom.add(boomArm);
+
+  const boomBrace = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.55), chromeMat);
+  boomBrace.position.set(1.75, 0, 0.2);
+  boom.add(boomBrace);
+
+  const dropTube = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 8), chromeMat);
+  dropTube.position.set(1.75, -0.28, 0.35);
+  boom.add(dropTube);
+
+  // Tip guard (fan-tip housing)
+  const tipGuard = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.08, 0.22),
+    new THREE.MeshStandardMaterial({ color: 0x374151, roughness: 0.5, metalness: 0.5 })
+  );
+  tipGuard.position.set(1.75, -0.58, 0.35);
+  boom.add(tipGuard);
 
   const nozzle = new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 10, 10),
+    new THREE.SphereGeometry(0.055, 10, 10),
     new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
       emissive: 0xf59e0b,
-      emissiveIntensity: 0.4,
+      emissiveIntensity: 0.55,
     })
   );
-  nozzle.position.set(3.05, -0.65, 0);
+  nozzle.position.set(1.75, -0.62, 0.35);
   nozzle.name = 'nozzle';
   boom.add(nozzle);
 
-  boom.position.set(0.2, 1.0, 0.8);
+  // Laser emitter under / near tip (LazerGuide-style start/stop + aim)
+  const laserEmitter = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.025, 0.03, 0.1, 8),
+    new THREE.MeshStandardMaterial({
+      color: 0x22c55e,
+      emissive: 0x16a34a,
+      emissiveIntensity: 0.9,
+      roughness: 0.3,
+      metalness: 0.5,
+    })
+  );
+  laserEmitter.rotation.x = Math.PI / 2;
+  laserEmitter.position.set(1.75, -0.52, 0.48);
+  laserEmitter.name = 'laserEmitter';
+  boom.add(laserEmitter);
+
+  const boomTag = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.1), accentMat);
+  boomTag.position.set(0.7, 0.07, 0);
+  boom.add(boomTag);
+
+  boom.position.set(0.55, 0.85, 0.55);
   root.add(boom);
 
-  const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.28, 14);
-  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 });
-  const wheelPositions = [
-    [-0.95, 0.42, -1.4],
-    [0.95, 0.42, -1.4],
-    [-0.95, 0.42, 1.35],
-    [0.95, 0.42, 1.35],
-  ];
+  // —— Wheels: rear drive + front casters ——
+  const rearGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.22, 16);
+  const casterGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.12, 12);
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.92 });
   const wheels = [];
-  for (const [wx, wy, wz] of wheelPositions) {
-    const w = new THREE.Mesh(wheelGeo, wheelMat);
+
+  for (const [wx, wy, wz] of [
+    [-0.7, 0.38, -0.95],
+    [0.7, 0.38, -0.95],
+  ]) {
+    const w = new THREE.Mesh(rearGeo, wheelMat);
     w.rotation.z = Math.PI / 2;
     w.position.set(wx, wy, wz);
     w.castShadow = true;
     root.add(w);
     wheels.push(w);
   }
-
-  const lightBar = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 0.15, 0.25),
-    new THREE.MeshStandardMaterial({
-      color: 0xf97316,
-      emissive: 0xea580c,
-      emissiveIntensity: 0.6,
-    })
-  );
-  lightBar.position.set(0, 2.2, -1.55);
-  root.add(lightBar);
-
-  const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.25, 0.3), darkMat);
-  bumper.position.set(0, 0.55, -2.25);
-  root.add(bumper);
+  for (const [wx, wy, wz] of [
+    [-0.45, 0.2, 1.15],
+    [0.45, 0.2, 1.15],
+  ]) {
+    const fork = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.06), chromeMat);
+    fork.position.set(wx, wy + 0.12, wz);
+    root.add(fork);
+    const w = new THREE.Mesh(casterGeo, wheelMat);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(wx, wy, wz);
+    w.castShadow = true;
+    root.add(w);
+    wheels.push(w);
+  }
 
   const state = {
     x: 0,
@@ -155,6 +248,12 @@ export function createVehicle() {
     turnRate: 2.35,
     crawlTurn: 2.8,
     precision: false,
+    locked: false,
+    lockYaw: 0,
+    lockOx: 0,
+    lockOz: 0,
+    lockDx: 0,
+    lockDz: 1,
   };
 
   function setPose(x, z, yaw) {
@@ -162,6 +261,7 @@ export function createVehicle() {
     state.z = z;
     state.yaw = yaw;
     state.speed = 0;
+    state.locked = false;
     syncTransform();
   }
 
@@ -177,6 +277,20 @@ export function createVehicle() {
     root.rotation.y = state.yaw;
   }
 
+  function lockPath(ox, oz, dx, dz, yaw) {
+    const len = Math.hypot(dx, dz) || 1;
+    state.locked = true;
+    state.lockOx = ox;
+    state.lockOz = oz;
+    state.lockDx = dx / len;
+    state.lockDz = dz / len;
+    state.lockYaw = yaw;
+  }
+
+  function unlockPath() {
+    state.locked = false;
+  }
+
   /**
    * @param {number} dt
    * @param {{ forward: number, steer: number, spray: boolean, precision?: boolean }} input
@@ -189,11 +303,17 @@ export function createVehicle() {
     const accel = crawl ? state.accel * 0.55 : state.accel;
     const revAccel = crawl ? state.reverseAccel * 0.7 : state.reverseAccel;
 
+    let steer = input.steer;
+
+    // Hard steer breaks lock
+    if (state.locked && Math.abs(steer) > 0.85) {
+      unlockPath();
+    }
+
     const throttle = input.forward;
     if (throttle > 0.05) {
       state.speed += accel * throttle * dt;
     } else if (throttle < -0.05) {
-      // Strong reverse — treat as reverse accel when stopped/backing
       if (state.speed > 0.15) {
         state.speed -= state.brake * Math.abs(throttle) * dt;
       } else {
@@ -204,25 +324,52 @@ export function createVehicle() {
       else if (state.speed < 0) state.speed = Math.min(0, state.speed + state.coast * dt);
     }
 
-    // Auto-creep when holding A/D at near-zero so tank-steer works
-    let steer = input.steer;
     if (Math.abs(steer) > 0.05 && Math.abs(state.speed) < 0.35 && Math.abs(throttle) < 0.05) {
       state.speed = (state.speed >= 0 ? 1 : -1) * (crawl ? 0.55 : 1.15);
     }
 
     state.speed = THREE.MathUtils.clamp(state.speed, -maxSpd * 0.75, maxSpd);
 
-    // Meaningful steering at low/zero speed (no harsh speedFactor floor)
     const absSpd = Math.abs(state.speed);
     const speedFactor = crawl
       ? THREE.MathUtils.clamp(0.85 + absSpd / maxSpd, 0.85, 1.2)
       : THREE.MathUtils.clamp(0.55 + absSpd / maxSpd, 0.55, 1.15);
     const turn = crawl ? state.crawlTurn : state.turnRate;
     const dir = Math.sign(state.speed || 1);
-    state.yaw -= steer * turn * speedFactor * dir * dt;
 
-    state.x += Math.sin(state.yaw) * state.speed * dt;
-    state.z += Math.cos(state.yaw) * state.speed * dt;
+    if (state.locked) {
+      // Assist: hold heading; keep NOZZLE on the lock path (gun is side-offset)
+      const yawErr = shortestAngle(state.yaw, state.lockYaw);
+      state.yaw += THREE.MathUtils.clamp(yawErr, -2.4 * dt, 2.4 * dt);
+      state.yaw -= steer * turn * 0.12 * speedFactor * dir * dt;
+
+      // Drive along lock axis first
+      state.x += state.lockDx * state.speed * dt;
+      state.z += state.lockDz * state.speed * dt;
+
+      // Nozzle local offset (boom + tip) — keep tip on paint line
+      const nlx = 2.3;
+      const nlz = 0.9;
+      const cos = Math.cos(state.yaw);
+      const sin = Math.sin(state.yaw);
+      const nox = state.x + cos * nlx + sin * nlz;
+      const noz = state.z - sin * nlx + cos * nlz;
+
+      const toX = nox - state.lockOx;
+      const toZ = noz - state.lockOz;
+      const along = toX * state.lockDx + toZ * state.lockDz;
+      const px = state.lockOx + state.lockDx * along;
+      const pz = state.lockOz + state.lockDz * along;
+      const latX = nox - px;
+      const latZ = noz - pz;
+      const snap = 1 - Math.exp(-10 * dt);
+      state.x -= latX * snap;
+      state.z -= latZ * snap;
+    } else {
+      state.yaw -= steer * turn * speedFactor * dir * dt;
+      state.x += Math.sin(state.yaw) * state.speed * dt;
+      state.z += Math.cos(state.yaw) * state.speed * dt;
+    }
 
     const margin = 2.5;
     state.x = THREE.MathUtils.clamp(state.x, -bounds.halfW + margin, bounds.halfW - margin);
@@ -240,18 +387,45 @@ export function createVehicle() {
     return target;
   }
 
+  function getLaserEmitterWorld(target = new THREE.Vector3()) {
+    laserEmitter.getWorldPosition(target);
+    return target;
+  }
+
+  /** Forward aim direction in XZ (unit). */
+  function getAimDir(out = new THREE.Vector2()) {
+    if (state.locked) {
+      out.set(state.lockDx, state.lockDz);
+    } else {
+      out.set(Math.sin(state.yaw), Math.cos(state.yaw));
+    }
+    return out;
+  }
+
   setColor('white');
 
   return {
     root,
     boom,
     nozzle,
+    laserEmitter,
     state,
     setPose,
     setColor,
     update,
     getNozzleWorld,
+    getLaserEmitterWorld,
+    getAimDir,
+    lockPath,
+    unlockPath,
   };
+}
+
+function shortestAngle(from, to) {
+  let d = to - from;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
 }
 
 function addHookersDecal(parent, x, y, z, scale = 0.2, yaw = 0) {

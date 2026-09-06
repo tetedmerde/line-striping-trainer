@@ -3,12 +3,14 @@ import { getMission, PASS_THRESHOLD } from './missions.js';
 import { createWorld, createGuideOverlays, LOT } from './world.js';
 import { createVehicle, updateChaseCamera } from './vehicle.js';
 import { createPaintSystem, scoreMission } from './paint.js';
+import { createLaserSystem } from './laser.js';
 import { createCrew } from './crew.js';
 
 const ALL_COLORS = ['white', 'yellow', 'blue'];
 
 /**
  * Three.js HOOKERS line-striping session on #2855 plan lot.
+ * LineLazer-style striper + LazerGuide target lock + airless tip coat.
  */
 export class StripingGame {
   /**
@@ -30,13 +32,17 @@ export class StripingGame {
     this.camMode = 'chase';
     this.perspCamera = null;
     this.orthoCamera = null;
+    this._laserStatus = { onTarget: false, laserOn: true };
+    this._lastTip = '';
 
     this._initThree();
     this._initScene();
     this._bindInput();
     this._resize();
     this._loop();
-    this._pushHud('HOOKERS ready — boom on a guide, then spray.');
+    this._pushHud(
+      'LineLazer mode: aim green laser at target box → L to LOCK → Space spray. T cycles target · G toggles laser.'
+    );
   }
 
   _initThree() {
@@ -145,14 +151,36 @@ export class StripingGame {
     this.scene.add(this.guides);
 
     this.paint = createPaintSystem(this.world, this.scene);
+    this.laser = createLaserSystem(this.scene, this.mission);
     this.crew = createCrew(this.scene);
+
+    // Seed target nearest to spawn facing a useful segment
+    this._pickNearestTarget();
 
     updateChaseCamera(this.camera, this.vehicle, 10, { mode: this.camMode });
   }
 
+  _pickNearestTarget() {
+    const segs = this.laser.segments;
+    if (!segs.length) return;
+    let best = 0;
+    let bestD = Infinity;
+    const sx = this.vehicle.state.x;
+    const sz = this.vehicle.state.z;
+    for (let i = 0; i < segs.length; i++) {
+      const s = segs[i];
+      // Prefer start (ax) near vehicle, target at far end
+      const d = Math.hypot(s.ax - sx, s.az - sz);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    this.laser.placeTargetAtSegment(best);
+  }
+
   _bindInput() {
     this._onKeyDown = (e) => {
-      // Always kill Space page-scroll while playing
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
         e.preventDefault();
       }
@@ -168,6 +196,19 @@ export class StripingGame {
       if (e.code === 'KeyR' && e.shiftKey) {
         this.world.clearPaint();
         this._pushHud('Paint cleared. Fresh asphalt — Hookers approve.');
+      }
+      if (e.code === 'KeyG') {
+        const on = this.laser.toggleLaser();
+        this._pushHud(on ? 'Laser ON — aim at the reflective target box.' : 'Laser OFF.');
+      }
+      if (e.code === 'KeyT') {
+        this.laser.cycleTarget(1);
+        const n = this.laser.targetIndex + 1;
+        const total = this.laser.segments.length;
+        this._pushHud(`Target box → bay/guide ${n}/${total}. Line up laser, then L to lock.`);
+      }
+      if (e.code === 'KeyL' || e.code === 'KeyF') {
+        this._toggleLock();
       }
     };
     this._onKeyUp = (e) => this.keys.delete(e.code);
@@ -191,6 +232,34 @@ export class StripingGame {
     window.addEventListener('pointerup', this._onPointerUp);
   }
 
+  _toggleLock() {
+    if (this.vehicle.state.locked) {
+      this.vehicle.unlockPath();
+      this._pushHud('Stripe path UNLOCKED — freehand / re-aim laser.');
+      return;
+    }
+    const status = this.laser.update(this.vehicle);
+    if (!status.laserOn) {
+      this._pushHud('Turn laser ON (G) and aim at the target box first.');
+      return;
+    }
+    if (!status.onTarget) {
+      this._pushHud('Laser off-target — center green beam on the target box, then L.');
+      return;
+    }
+    const path = this.laser.getLockPath(this.vehicle);
+    if (!path) {
+      this._pushHud('No guide segment for this target.');
+      return;
+    }
+    this.vehicle.lockPath(path.ox, path.oz, path.dx, path.dz, path.yaw);
+    // Snap vehicle heading toward lock
+    this.vehicle.state.yaw = path.yaw;
+    this._pushHud(
+      'LOCKED on path — drive forward/back, Space for a clean 4" coat. L or hard steer to unlock.'
+    );
+  }
+
   /** Always allow white/yellow/blue — scoring penalizes wrong color vs guides. */
   _setColor(name) {
     if (!ALL_COLORS.includes(name)) return;
@@ -212,7 +281,9 @@ export class StripingGame {
     this.camMode = this.camMode === 'chase' ? 'ortho' : 'chase';
     this.camera = this.camMode === 'ortho' ? this.orthoCamera : this.perspCamera;
     this._resize();
-    this._pushHud(this.camMode === 'ortho' ? 'Top-down assist ON (V to chase)' : 'Chase cam ON (V for top-down)');
+    this._pushHud(
+      this.camMode === 'ortho' ? 'Top-down assist ON (V to chase)' : 'Chase cam ON (V for top-down)'
+    );
   }
 
   setColorFromHud(name) {
@@ -258,16 +329,30 @@ export class StripingGame {
   }
 
   _pushHud(tip) {
+    if (tip) this._lastTip = tip;
+    const locked = this.vehicle.state.locked;
+    const laserOn = this.laser?.laserOn ?? true;
+    const onTarget = this._laserStatus.onTarget;
+    let laserLabel = 'OFF';
+    if (laserOn) laserLabel = onTarget ? 'ON TARGET' : 'AIMING';
+    if (locked) laserLabel = 'LOCKED';
+
     this.onHud({
       mission: this.mission,
       mode: this.mode,
       color: this.vehicle.state.color,
       speed: Math.abs(this.vehicle.state.speed),
       spraying: this.vehicle.state.spraying,
-      tip: tip || this.mission.tips[0],
+      tip: this._lastTip || this.mission.tips[0],
       elapsed: this.elapsed,
       camMode: this.camMode,
       precision: this.vehicle.state.precision,
+      laserOn,
+      onTarget,
+      locked,
+      laserLabel,
+      targetIndex: (this.laser?.targetIndex ?? 0) + 1,
+      targetCount: this.laser?.segments?.length ?? 0,
     });
   }
 
@@ -278,10 +363,16 @@ export class StripingGame {
     this.elapsed += dt;
 
     const input = this._input();
+    const wasLocked = this.vehicle.state.locked;
     this.vehicle.update(dt, input, {
       halfW: LOT.width / 2,
       halfD: LOT.depth / 2,
     });
+    if (wasLocked && !this.vehicle.state.locked) {
+      this._pushHud('Lock broken (hard steer). Re-aim laser → L.');
+    }
+
+    this._laserStatus = this.laser.update(this.vehicle);
     this.paint.update(this.vehicle, dt);
     this.crew?.update(dt, this.vehicle);
 
@@ -321,6 +412,7 @@ export class StripingGame {
     if (this.renderer) {
       this.renderer.domElement.removeEventListener('pointerdown', this._onPointerDown);
       this.paint?.dispose();
+      this.laser?.dispose();
       this.renderer.dispose();
       if (this.renderer.domElement.parentNode) {
         this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);

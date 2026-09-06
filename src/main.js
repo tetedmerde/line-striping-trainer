@@ -48,19 +48,19 @@ function startScreen() {
         <div class="badge-row">
           <span class="badge badge-crew">HOOKERS Crew</span>
           <span class="badge">#2855 Lot</span>
-          <span class="badge">3D Stripe Sim</span>
+          <span class="badge">LineLazer Sim</span>
         </div>
         <h1>HOOKERS</h1>
         <p class="tagline">Line Striping Trainer</p>
         <p class="subtitle">
-          Climb into the crew truck and restripe Supercenter <strong>#2855</strong> —
-          real site-plan layout, angled stalls, ADA, SECP crosswalks, fire lane.
+          Climb onto the ride-on airless striper and restripe Supercenter <strong>#2855</strong> —
+          real site-plan layout, LazerGuide-style target lock, and a smooth 4" tip coat.
           Your Hookers crew mates are already on the asphalt. Don’t embarrass them.
         </p>
         <ul class="feature-list">
-          <li>Plan-accurate #2855 lot under your tires</li>
-          <li>WASD striper · boom spray · crawl mode for precision</li>
-          <li>Switch paint anytime — scoring is how you learn</li>
+          <li>LineLazer-style striper · hopper · gun arm · laser at the tip</li>
+          <li>Place target → aim laser → <strong>L to LOCK</strong> → stripe clean multi-bay lines</li>
+          <li>Continuous airless paint (not speckles) · freehand still there if you’re a masochist</li>
         </ul>
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-start">Roll With Hookers</button>
@@ -98,7 +98,7 @@ function selectScreen() {
           <span class="badge badge-crew">HOOKERS</span>
         </div>
         <h1>Pick Your Chaos</h1>
-        <p class="subtitle">Practice keeps the ghosts bright. Test fades them while the crew watches. Color keys always work — wrong color just costs pride (and points).</p>
+        <p class="subtitle">Practice keeps the ghosts bright. Test fades them while the crew watches. Default workflow: laser lock — freehand is advanced/hard mode.</p>
 
         <div class="mode-toggle" role="group" aria-label="Training mode">
           <button type="button" class="btn btn-secondary ${state.mode === 'practice' ? 'active' : ''}" data-mode="practice">Practice</button>
@@ -170,6 +170,10 @@ function gameScreen() {
             <span class="hud-label">Speed</span>
             <span class="hud-value" id="hud-speed">0 mph</span>
           </div>
+          <div class="hud-block">
+            <span class="hud-label">Laser / Lock</span>
+            <span class="hud-value" id="hud-laser"><span class="laser-pill aiming" id="hud-laser-pill">AIMING</span></span>
+          </div>
         </div>
         <div class="hud-bottom">
           <div class="hud-tip" id="hud-tip">${m.brief}</div>
@@ -180,9 +184,12 @@ function gameScreen() {
         </div>
         <div class="hud-help">
           <span>WASD drive</span>
+          <span>G laser</span>
+          <span>T target</span>
+          <span>L / F lock</span>
           <span>Space / LMB spray</span>
           <span>Shift crawl</span>
-          <span>1·2·3 / Q·E paint</span>
+          <span>1·2·3 paint</span>
           <span>V top-down</span>
           <span>Enter submit</span>
         </div>
@@ -201,10 +208,28 @@ function bindGame() {
       const cn = document.getElementById('hud-color-name');
       const tip = document.getElementById('hud-tip');
       const spd = document.getElementById('hud-speed');
+      const pill = document.getElementById('hud-laser-pill');
       if (sw) sw.style.background = COLORS[data.color] || '#fff';
       if (cn) cn.textContent = data.color + (data.precision ? ' · CRAWL' : '');
       if (tip && data.tip) tip.textContent = data.tip;
       if (spd) spd.textContent = `${(data.speed * 2.2).toFixed(0)} mph`;
+      if (pill) {
+        const label = data.laserLabel || 'AIMING';
+        pill.textContent =
+          label +
+          (data.targetCount
+            ? ` · T${data.targetIndex}/${data.targetCount}`
+            : '');
+        pill.className =
+          'laser-pill ' +
+          (data.locked
+            ? 'locked'
+            : data.onTarget
+              ? 'on-target'
+              : data.laserOn
+                ? 'aiming'
+                : 'off');
+      }
       document.querySelectorAll('.swatch').forEach((el) => {
         el.classList.toggle('active', el.dataset.color === data.color);
       });
