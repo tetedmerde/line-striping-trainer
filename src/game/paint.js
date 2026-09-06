@@ -1,11 +1,12 @@
-import { COLORS } from './missions.js';
+import { COLORS, PLAN_W, PLAN_H } from './missions.js';
+import { SCALE } from './coords.js';
 
 /**
  * Offscreen paint layer — continuous soft airless coat (not speckles).
- * World units = plan pixels.
+ * Stored in plan-pixel space; uploaded as transparent overlay on asphalt.
  */
 export class PaintLayer {
-  constructor(width, height) {
+  constructor(width = PLAN_W, height = PLAN_H) {
     this.width = width;
     this.height = height;
     this.canvas = document.createElement('canvas');
@@ -14,28 +15,27 @@ export class PaintLayer {
     this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     this.last = null;
     this.colorKey = 'yellow';
-    this.lineWidth = 4.2; // ~4" look at this map scale
+    /** ~4″ at map scale (plan px) */
+    this.lineWidth = 4.2;
+    this.dirty = true;
   }
 
   clear() {
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.last = null;
+    this.dirty = true;
   }
 
   setColor(key) {
     this.colorKey = key;
   }
 
-  beginStroke() {
-    this.last = null;
-  }
-
   /**
-   * Lay a smooth coat segment. Soft edges via light blur + round caps.
-   * @param {{x:number,y:number}} tip
+   * @param {{x:number,y:number}} tipPlan plan-pixel tip
    * @param {boolean} spraying
+   * @param {boolean} lockedQuality thicker/cleaner when locked
    */
-  spray(tip, spraying) {
+  spray(tipPlan, spraying, lockedQuality = false) {
     if (!spraying) {
       this.last = null;
       return;
@@ -43,61 +43,56 @@ export class PaintLayer {
 
     const ctx = this.ctx;
     const color = COLORS[this.colorKey] || COLORS.yellow;
-    const w = this.lineWidth;
+    const w = lockedQuality ? this.lineWidth * 1.05 : this.lineWidth * 0.92;
 
     if (!this.last) {
-      this.last = { ...tip };
+      this.last = { ...tipPlan };
       ctx.save();
-      ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = color;
       ctx.shadowColor = color;
-      ctx.shadowBlur = 1.6;
+      ctx.shadowBlur = 1.8;
+      ctx.globalAlpha = 0.95;
       ctx.beginPath();
-      ctx.arc(tip.x, tip.y, w * 0.5, 0, Math.PI * 2);
+      ctx.arc(tipPlan.x, tipPlan.y, w * 0.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+      this.dirty = true;
       return;
     }
 
-    const dx = tip.x - this.last.x;
-    const dy = tip.y - this.last.y;
+    const dx = tipPlan.x - this.last.x;
+    const dy = tipPlan.y - this.last.y;
     const dist = Math.hypot(dx, dy);
-    if (dist < 0.35) return;
+    if (dist < 0.3) return;
 
     ctx.save();
-    ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = color;
-    ctx.fillStyle = color;
     ctx.lineWidth = w;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.shadowColor = color;
-    ctx.shadowBlur = 1.8;
-    ctx.globalAlpha = 0.92;
+    ctx.shadowBlur = lockedQuality ? 2.2 : 1.6;
+    ctx.globalAlpha = lockedQuality ? 0.96 : 0.88;
 
     ctx.beginPath();
     ctx.moveTo(this.last.x, this.last.y);
-    ctx.lineTo(tip.x, tip.y);
+    ctx.lineTo(tipPlan.x, tipPlan.y);
     ctx.stroke();
 
-    // Second pass slightly narrower for solid core (airless look)
+    // Solid core pass (airless look)
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
-    ctx.lineWidth = w * 0.72;
+    ctx.lineWidth = w * 0.7;
     ctx.beginPath();
     ctx.moveTo(this.last.x, this.last.y);
-    ctx.lineTo(tip.x, tip.y);
+    ctx.lineTo(tipPlan.x, tipPlan.y);
     ctx.stroke();
     ctx.restore();
 
-    this.last = { ...tip };
+    this.last = { ...tipPlan };
+    this.dirty = true;
   }
 
-  /**
-   * Coverage scoring: sample along guides, check nearby paint matches color.
-   * @param {import('./missions.js').Guide[]} guides
-   * @param {string[]} allowedColors
-   */
   score(guides, allowedColors) {
     const ctx = this.ctx;
     const { width, height } = this;
@@ -141,10 +136,7 @@ export class PaintLayer {
       const dg = data[i + 1] - target.g;
       const db = data[i + 2] - target.b;
       if (dr * dr + dg * dg + db * db < 85 * 85) {
-        // Wrong-color penalty: if painted but wrong family vs allowed, no credit
-        if (allowed && allowed.length && !allowed.includes(want)) {
-          /* guide color is want; paint matching want is fine */
-        }
+        void allowed;
         return true;
       }
     }
@@ -158,5 +150,13 @@ function hexToRgb(hex) {
     r: parseInt(h.slice(0, 2), 16),
     g: parseInt(h.slice(2, 4), 16),
     b: parseInt(h.slice(4, 6), 16),
+  };
+}
+
+/** World meters tip -> plan spray */
+export function tipWorldToPlan(wx, wz) {
+  return {
+    x: wx / SCALE + PLAN_W * 0.5,
+    y: wz / SCALE + PLAN_H * 0.5,
   };
 }

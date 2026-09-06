@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="HOOKERS top-down LineLazer striping trainer — Supercenter #2855 plan lot."
+      content="HOOKERS 3D LineLazer striping trainer — Supercenter #2855 plan lot with laser lock and helper target."
     />
     <title>HOOKERS — Line Striping Trainer</title>
     <link rel="stylesheet" href="/src/style.css" />
@@ -17,7 +17,7 @@
       <header id="hud-top">
         <div class="brand">
           <span class="crew">HOOKERS</span>
-          <span class="sub">Line Striping Trainer · #2855</span>
+          <span class="sub">3D LineLazer Trainer · #2855</span>
         </div>
         <div id="mission-title">Mission</div>
         <div id="score-pill">Coverage —</div>
@@ -38,9 +38,11 @@
 
       <aside id="hud-right">
         <div class="panel status">
-          <div class="row"><span>Laser</span><strong id="laser-state">OFF</strong></div>
+          <div class="row"><span>Laser</span><strong id="laser-state">AIMING</strong></div>
           <div class="row"><span>Target</span><strong id="target-state">—</strong></div>
           <div class="row"><span>Lock</span><strong id="lock-state">FREE</strong></div>
+          <div class="row"><span>Helper</span><strong id="helper-state">—</strong></div>
+          <div class="row"><span>Cam</span><strong id="cam-state">CHASE</strong></div>
           <div class="row"><span>Paint</span><strong id="paint-state">YELLOW</strong></div>
           <div class="swatches">
             <button type="button" class="swatch" data-color="white" title="1 White"></button>
@@ -49,34 +51,38 @@
           </div>
         </div>
         <div class="panel tip" id="tip-panel">
-          Line up the green laser on the target box, press <kbd>L</kbd> to lock, then hold
-          <kbd>Space</kbd> while driving.
+          Aim green laser at helper’s reflective box → <kbd>L</kbd> lock → <kbd>Space</kbd> spray.
+          Helper walks the box down the row. <kbd>[</kbd>/<kbd>]</kbd> nudge · <kbd>T</kbd> next bay ·
+          <kbd>V</kbd> top-down.
         </div>
       </aside>
 
       <footer id="hud-bottom">
         <div class="controls">
-          <span><kbd>WASD</kbd> move</span>
+          <span><kbd>WASD</kbd> drive</span>
           <span><kbd>G</kbd> laser</span>
-          <span><kbd>T</kbd> target</span>
+          <span><kbd>T</kbd> next bay</span>
+          <span><kbd>[</kbd>/<kbd>]</kbd> nudge target</span>
+          <span><kbd>H</kbd> call helper</span>
           <span><kbd>L</kbd>/<kbd>F</kbd> lock</span>
           <span><kbd>Space</kbd> spray</span>
+          <span><kbd>V</kbd> top · <kbd>C</kbd> shoulder</span>
           <span><kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> color</span>
-          <span><kbd>Enter</kbd> submit</span>
+          <span><kbd>Enter</kbd> score</span>
           <span><kbd>R</kbd> clear</span>
-          <span><kbd>Scroll</kbd> zoom · drag pan</span>
         </div>
       </footer>
 
       <div id="title-splash">
         <div class="splash-card">
           <p class="splash-crew">HOOKERS</p>
-          <h1>LineLazer Trainer</h1>
-          <p class="splash-sub">Top-down · Supercenter #2855 plan lot</p>
+          <h1>LineLazer Trainer 3D</h1>
+          <p class="splash-sub">Hyper-real lot · #2855 plan · laser lock · helper target</p>
           <ol>
-            <li><kbd>T</kbd> place target at end of guide</li>
-            <li>Drive so the green laser hits the box</li>
-            <li><kbd>L</kbd> lock · <kbd>Space</kbd> spray a clean stripe</li>
+            <li>Helper holds the reflective box at the far end of a guide</li>
+            <li>Drive so the green laser hits the box → <kbd>L</kbd> lock</li>
+            <li>Hold <kbd>Space</kbd> — smooth 4″ coat; helper advances the box</li>
+            <li><kbd>T</kbd> / <kbd>[</kbd><kbd>]</kbd> move target · <kbd>V</kbd> top-down assist</li>
             <li><kbd>Enter</kbd> score coverage</li>
           </ol>
           <button type="button" id="start-btn">Start striping</button>

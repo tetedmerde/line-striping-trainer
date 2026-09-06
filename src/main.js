@@ -18,10 +18,16 @@ const startBtn = document.getElementById('start-btn');
 async function boot() {
   try {
     await game.load();
+    // Share paint canvas as Three texture source
+    if (game.world?.paintTex) {
+      game.world.paintTex.image = game.paint.canvas;
+      game.world.paintTex.needsUpdate = true;
+    }
   } catch (err) {
     console.error(err);
-    hud.toast('Failed to load plan image');
+    hud.toast('Failed to load 3D world / plan');
   }
+  game.resize();
   game.start();
 }
 
@@ -29,7 +35,6 @@ startBtn.addEventListener('click', () => {
   splash.classList.add('hidden');
 });
 
-// Click splash anywhere to start
 splash.addEventListener('click', (e) => {
   if (e.target === splash || e.target === startBtn || e.target.closest('.splash-card')) {
     splash.classList.add('hidden');
