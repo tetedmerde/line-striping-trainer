@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="HOOKERS 3D LineLazer striping trainer — Supercenter #2855 plan lot with laser lock and helper target."
+      content="HOOKERS 3D LineLazer striping trainer — #2855 blacktop lot, AutoLayout dots, laser lock."
     />
     <title>HOOKERS — Line Striping Trainer</title>
-    <script type="module" crossorigin src="/line-striping-trainer/assets/index-C8qpQz9s.js"></script>
-    <link rel="stylesheet" crossorigin href="/line-striping-trainer/assets/index-MDb0ayy_.css">
+    <script type="module" crossorigin src="/line-striping-trainer/assets/index-X2exWy_A.js"></script>
+    <link rel="stylesheet" crossorigin href="/line-striping-trainer/assets/index-DAzuORbk.css">
   </head>
   <body>
     <div id="app">
@@ -18,7 +18,7 @@
       <header id="hud-top">
         <div class="brand">
           <span class="crew">HOOKERS</span>
-          <span class="sub">3D LineLazer Trainer · #2855</span>
+          <span class="sub">3D LineLazer · #2855 blacktop</span>
         </div>
         <div id="mission-title">Mission</div>
         <div id="score-pill">Coverage —</div>
@@ -39,6 +39,8 @@
 
       <aside id="hud-right">
         <div class="panel status">
+          <div class="row"><span>Phase</span><strong id="phase-state">LAYOUT</strong></div>
+          <div class="row"><span>Layout</span><strong id="layout-state">—</strong></div>
           <div class="row"><span>Laser</span><strong id="laser-state">AIMING</strong></div>
           <div class="row"><span>Target</span><strong id="target-state">—</strong></div>
           <div class="row"><span>Lock</span><strong id="lock-state">FREE</strong></div>
@@ -52,21 +54,24 @@
           </div>
         </div>
         <div class="panel tip" id="tip-panel">
-          Aim green laser at helper’s reflective box → <kbd>L</kbd> lock → <kbd>Space</kbd> spray.
-          Helper walks the box down the row. <kbd>[</kbd>/<kbd>]</kbd> nudge · <kbd>T</kbd> next bay ·
-          <kbd>V</kbd> top-down.
+          <strong>LAYOUT</strong> — crew places AutoLayout dots.
+          <kbd>Y</kbd> skip → <strong>STRIPE</strong>: aim laser through dots / helper box →
+          <kbd>L</kbd> lock → <kbd>Space</kbd> coat.
+          <kbd>P</kbd> faint plan debug.
         </div>
       </aside>
 
       <footer id="hud-bottom">
         <div class="controls">
           <span><kbd>WASD</kbd> drive</span>
+          <span><kbd>Y</kbd> skip layout</span>
           <span><kbd>G</kbd> laser</span>
           <span><kbd>T</kbd> next bay</span>
-          <span><kbd>[</kbd>/<kbd>]</kbd> nudge target</span>
+          <span><kbd>[</kbd>/<kbd>]</kbd> nudge</span>
           <span><kbd>H</kbd> call helper</span>
           <span><kbd>L</kbd>/<kbd>F</kbd> lock</span>
           <span><kbd>Space</kbd> spray</span>
+          <span><kbd>P</kbd> plan ref</span>
           <span><kbd>V</kbd> top · <kbd>C</kbd> shoulder</span>
           <span><kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> color</span>
           <span><kbd>Enter</kbd> score</span>
@@ -78,13 +83,13 @@
         <div class="splash-card">
           <p class="splash-crew">HOOKERS</p>
           <h1>LineLazer Trainer 3D</h1>
-          <p class="splash-sub">Hyper-real lot · #2855 plan · laser lock · helper target</p>
+          <p class="splash-sub">#2855 blacktop · AutoLayout dots · LazerGuide lock</p>
           <ol>
-            <li>Helper holds the reflective box at the far end of a guide</li>
-            <li>Drive so the green laser hits the box → <kbd>L</kbd> lock</li>
-            <li>Hold <kbd>Space</kbd> — smooth 4″ coat; helper advances the box</li>
-            <li><kbd>T</kbd> / <kbd>[</kbd><kbd>]</kbd> move target · <kbd>V</kbd> top-down assist</li>
-            <li><kbd>Enter</kbd> score coverage</li>
+            <li><strong>LAYOUT</strong> — little guys walk the bay & put down pre-mark dots</li>
+            <li><strong>STRIPE</strong> — aim green laser through dots / helper box → <kbd>L</kbd> lock</li>
+            <li>Hold <kbd>Space</kbd> — smooth 4″ airless coat connecting the dots</li>
+            <li><kbd>Y</kbd> skips layout · <kbd>T</kbd> / <kbd>[</kbd><kbd>]</kbd> move helper · <kbd>P</kbd> plan debug</li>
+            <li><kbd>Enter</kbd> scores coverage (prefers clean dot connects)</li>
           </ol>
           <button type="button" id="start-btn">Start striping</button>
         </div>
