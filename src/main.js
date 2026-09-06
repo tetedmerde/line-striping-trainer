@@ -164,7 +164,7 @@ function gameScreen() {
         <strong>Tips:</strong> ${mission.tips[0]}
         &nbsp;·&nbsp; Paint: hold mouse &nbsp;·&nbsp;
         Colors: <kbd>1</kbd> White <kbd>2</kbd> Yellow <kbd>3</kbd> Blue
-        &nbsp;·&nbsp; Optional move: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+        &nbsp;·&nbsp; Pan: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
         &nbsp;·&nbsp; <kbd>Enter</kbd> submit
       </footer>
     </section>

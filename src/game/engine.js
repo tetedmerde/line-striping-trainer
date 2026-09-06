@@ -106,8 +106,8 @@ export class StripingGame {
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: (e.clientX - rect.left) * scaleX - this.camX,
+      y: (e.clientY - rect.top) * scaleY - this.camY,
     };
   }
 
@@ -164,14 +164,14 @@ export class StripingGame {
   };
 
   updateCamera() {
-    const speed = 4;
-    if (this.keys.has('w') || this.keys.has('arrowup')) this.camY -= speed;
-    if (this.keys.has('s') || this.keys.has('arrowdown')) this.camY += speed;
-    if (this.keys.has('a') || this.keys.has('arrowleft')) this.camX -= speed;
-    if (this.keys.has('d') || this.keys.has('arrowright')) this.camX += speed;
-    // Camera unused for full-lot view; kept for optional pan feel (clamped no-op)
-    this.camX = 0;
-    this.camY = 0;
+    const speed = 6;
+    if (this.keys.has('w') || this.keys.has('arrowup')) this.camY += speed;
+    if (this.keys.has('s') || this.keys.has('arrowdown')) this.camY -= speed;
+    if (this.keys.has('a') || this.keys.has('arrowleft')) this.camX += speed;
+    if (this.keys.has('d') || this.keys.has('arrowright')) this.camX -= speed;
+    const maxPan = 80;
+    this.camX = Math.max(-maxPan, Math.min(maxPan, this.camX));
+    this.camY = Math.max(-maxPan, Math.min(maxPan, this.camY));
   }
 
   guideOpacity() {
@@ -187,7 +187,9 @@ export class StripingGame {
   render() {
     const ctx = this.ctx;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, LOT_W, LOT_H);
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(0, 0, LOT_W, LOT_H);
+    ctx.setTransform(1, 0, 0, 1, this.camX, this.camY);
 
     drawLot(ctx, {
       showAdaSymbols: this.mission.showAdaSymbols,
